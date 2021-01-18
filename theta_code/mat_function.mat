@@ -1,0 +1,31 @@
+function res = mom_Q(calls,puts,kc,kp,fr,rf,fun,fun_der_sec)
+
+	% calls 	: vector of call option prices for fixed time t and horizon T-t for different strikes
+	% puts  	: vector of put option prices for fixed time t and horizon T-t for different strikes
+	% kc        	: vector of strikes corresponding to the call prices
+	% kp        	: vector of strikes corresponding to the put prices
+	% fr        	: forward price t->T
+	% rf        	: risk free return comp. t->T
+	% fun       	: function f in E^Q[f(R)]
+	% fun_der_sec   : second derivative of f
+
+	ind_c = kc>=fr;   % out of the money calls
+        ind_p = kp<=fr;   % out of the money puts
+
+	kc = kc(ind_c);   calls = calls(ind_c);
+	kp = kp(ind_p);   puts  = puts(ind_p);
+
+	for i = 1:length(kc)
+		fin_kc(i,1) =  fun_der_sec(kc(i)/fr);
+	end
+	for i = 1:length(kp)
+		fin_kp(i,1) =  fun_der_sec(kp(i)/fr);
+	end
+
+	% compute numerically the integrals
+
+	b1      = trapz(kc,fin_kc.*calls,1);
+	b2      = trapz(kp,fin_kp.*puts,1);
+
+	res     = (b1+b2)*rf/(fr^2)+ fun(1);
+end
