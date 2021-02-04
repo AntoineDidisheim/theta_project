@@ -7,6 +7,12 @@ from enum import Enum
 import numpy as np
 import pandas as pd
 
+##################
+# Constant
+##################
+
+class Constant:
+    MAX_OPT = 323
 
 ##################
 # params Enum
@@ -54,6 +60,12 @@ class ParamsModels:
         self.learning_rate = 0.001
 
 
+class DataParams:
+    def __init__(self):
+        self.dir = '/media/antoinedidisheim/ssd_ntfs/theta_project/data/'
+        self.max_opt = 323
+
+
 # store all parameters into a single object
 class Params:
     def __init__(self):
@@ -61,7 +73,7 @@ class Params:
         self.name = ''
         self.seed = 12345
         self.model = ParamsModels()
-
+        self.data = DataParams()
         self.process = None
         self.update_model_name()
 
