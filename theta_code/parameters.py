@@ -12,7 +12,7 @@ import pandas as pd
 ##################
 
 class Constant:
-    MAX_OPT = 323
+    MAX_OPT = 545
 
 ##################
 # params Enum
@@ -50,14 +50,16 @@ class ParamsModels:
         self.normalize_range = False
         # self.model_type = 'deep'
         self.model_type = 'nnet'
-        self.E = 10
-
+        self.E = 3
+        #
         self.layers = [64, 32, 16]
-        self.batch_size = 512
-        self.activation = 'swish'
+        # self.layers
+        self.batch_size = 32
+        self.activation = 'relu'
         self.opti = Optimizer.ADAM
         self.loss = Loss.MSE
-        self.learning_rate = 0.001
+        self.learning_rate = 0.01
+        self.dropout = 0.01
 
 
 class DataParams:
