@@ -66,12 +66,13 @@ class DataParams:
     def __init__(self):
         self.dir = '/media/antoinedidisheim/ssd_ntfs/theta_project/data/'
         self.max_opt = 323
+        self.val_split = 0.1
 
 
 # store all parameters into a single object
 class Params:
     def __init__(self):
-        self.name_detail = ''
+        self.name_detail = 'default'
         self.name = ''
         self.seed = 12345
         self.model = ParamsModels()

@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-par = Params()
-freq='daily'
+# par = Params()
+# freq='daily'
 
 class RawData:
     def __init__(self, par, freq='monthly'):
@@ -73,11 +73,52 @@ class Data:
         self.p_df = None
         self.label_df = None
 
+
+        self.train_m_df = None
+        self.train_p_df = None
+        self.train_label_df = None
+
+        self.test_m_df = None
+        self.test_p_df = None
+        self.test_label_df = None
+
+        self.ind_order_list = None
+        self.shuffle_id=0
+
+    def move_shuffle(self):
+        if self.ind_order_list is None:
+            t = list(self.label_df.index.copy())
+            np.random.shuffle(t)
+            self.ind_order_list = np.array(t)
+            self.shuffle_id = 0
+        p_test = self.par.data.val_split
+        t_size = int(np.ceil(len(self.ind_order_list)*p_test))
+        start = self.shuffle_id*t_size
+        end = min((self.shuffle_id+1)*t_size, len(self.ind_order_list))
+        test_id = self.ind_order_list[start:end]
+        train_id = np.array([x for x in self.ind_order_list if x not in test_id])
+
+        self.test_label_df = self.label_df.iloc[test_id,:].reset_index(drop=True)
+        self.test_m_df =  self.m_df.iloc[test_id,:].reset_index(drop=True)
+        self.test_p_df = self.p_df.iloc[test_id,:].reset_index(drop=True)
+
+
+        self.train_label_df = self.label_df.iloc[train_id,:].reset_index(drop=True)
+        self.train_m_df =  self.m_df.iloc[train_id,:].reset_index(drop=True)
+        self.train_p_df= self.p_df.iloc[train_id,:].reset_index(drop=True)
+        self.shuffle_id+=1
+        if self.shuffle_id*p_test >1.0:
+            self.shuffle_id = 0
+        print(f'Set shuffle {self.shuffle_id}')
+
     def load_final(self):
         #finally save all
         self.m_df = pd.read_pickle(self.par.data.dir+'m_df.p')
         self.p_df = pd.read_pickle(self.par.data.dir+'pred_df.p')
         self.label_df = pd.read_pickle(self.par.data.dir+'label_df.p')
+        #convert ret to log ret
+        self.label_df['ret'] = np.log(self.label_df['ret']+1)
+
         ind= (self.label_df['ret']<=0.5) & (self.label_df['ret']>=-0.5)
         self.label_df = self.label_df.loc[ind, :].reset_index(drop=True)
         self.m_df = self.m_df.loc[ind, :].reset_index(drop=True)
@@ -87,20 +128,8 @@ class Data:
         for c in self.p_df.columns:
             self.p_df.loc[:,c] = (self.p_df[c]-self.p_df[c].mean())/self.p_df[c].std()
 
-        t = list(self.label_df.index.copy())
-        # fix seed first
-        np.random.seed(1234)
-        np.random.shuffle(t)
-        np.random.shuffle(t)
-        test_size = int(np.round(len(t)*0.05))
-        self.label_test = self.label_df.iloc[t[:test_size],:].reset_index(drop=True)
-        self.m_test =  self.m_df.iloc[t[:test_size],:].reset_index(drop=True)
-        self.p_test = self.p_df.iloc[t[:test_size],:].reset_index(drop=True)
+        self.p_df = self.p_df.clip(-3.0,3.0)
 
-
-        self.label_df = self.label_df.iloc[t[test_size:],:].reset_index(drop=True)
-        self.m_df =  self.m_df.iloc[t[test_size:],:].reset_index(drop=True)
-        self.p_df = self.p_df.iloc[t[test_size:],:].reset_index(drop=True)
 
 
     def load_and_merge_pred_opt(self):
@@ -205,10 +234,10 @@ class Data:
         puts = fill_m_opt(day.loc[p_ind,'opt_price'].values)
         #TODO fix the rf with the proper rf from optionmetrics
         rf = np.array(day.loc[:, 'rf'].iloc[0]).reshape(1)
-        fr = np.array(day.loc[:, 'forward_price'].iloc[0]).reshape(1)
+        s0 = np.array(day.loc[:, 'S0'].iloc[0]).reshape(1)
         Nc = np.array(c_ind.sum()).reshape(1)
         Np = np.array(p_ind.sum()).reshape(1)
-        m = np.concatenate([kc,kp,calls,puts,rf,fr,Nc,Np])
+        m = np.concatenate([kc,kp,calls,puts,rf,s0,Nc,Np])
         p = day.loc[:,pred_col].iloc[0,:].values
         return m, p
 
@@ -671,8 +700,7 @@ class Data:
             final = pd.read_pickle(self.par.data.dir + 'pred.p')
         return final
 
-    @staticmethod
-    def get_beta(freq='monthly'):
+    def get_beta(self,freq='monthly'):
         print('#' * 50)
         print('Start Beta', freq)
         print('#' * 50)
@@ -711,8 +739,7 @@ class Data:
         t = t.reset_index().melt(id_vars=['date']).rename(columns={'variable': 'tic', 'value': f'beta_{freq}'})
         return t
 
-    @staticmethod
-    def get_id_risk(freq='monthly'):
+    def get_id_risk(self, freq='monthly'):
         print('#' * 50)
         print('Start id risk', freq)
         print('#' * 50)
@@ -721,7 +748,7 @@ class Data:
         else:
             r = 12
 
-        raw = RawData(par, freq)
+        raw = RawData(self.par, freq)
         df = raw.ff.merge(raw.crsp, how='inner', on='date')
         df['one'] = 1
         df = df.dropna()
@@ -754,9 +781,9 @@ class Data:
         return t
 
     def gen_delta(self):
-        df = Data.get_beta('monthly')
+        df = self.get_beta('monthly')
         df.to_pickle(self.par.data.dir + 'beta_m.p')
-        df = Data.get_beta('daily')
+        df = self.get_beta('daily')
         df.to_pickle(self.par.data.dir + 'beta_daily.p')
 
     def gen_id_risk(self):
@@ -770,8 +797,7 @@ class Data:
         self.gen_id_risk()
 
 
-self = Data(Params())
-
+# self = Data(Params())
 # self.pre_process_sample()
 # self.clean_opt_1()
 # self.clean_opt_2()
