@@ -6,13 +6,16 @@ import itertools
 from enum import Enum
 import numpy as np
 import pandas as pd
+import socket
+
 
 ##################
 # Constant
 ##################
 
 class Constant:
-    MAX_OPT = 545
+    MAX_OPT = 1000
+
 
 ##################
 # params Enum
@@ -33,6 +36,14 @@ class Loss(Enum):
     MAE = 2
 
 
+class DataType(Enum):
+    COMP_CRSP_OPTION_1 = 1
+    OPTION_1 = 2
+    COMP_CRSP_1 = 3
+    CRSP_1 = 4
+    CRSP_OPTION_1 = 5
+
+
 ##################
 # params classes
 ##################
@@ -42,12 +53,6 @@ class ParamsModels:
         # self.kernel = RBF(length_scale=100)
         self.save_dir = './model_save/'
         self.res_dir = './res/'
-
-        # self.kernel = RBF(10, (1e-2, 1e2))
-        self.kernel_name = 'mattern'
-        self.active_subspace = -1
-        self.normalize = True
-        self.normalize_range = False
         # self.model_type = 'deep'
         self.model_type = 'nnet'
         self.E = 3
@@ -60,13 +65,18 @@ class ParamsModels:
         self.loss = Loss.MSE
         self.learning_rate = 0.01
         self.dropout = 0.01
+        self.output_range = 1.0
 
 
 class DataParams:
     def __init__(self):
-        self.dir = '/media/antoinedidisheim/ssd_ntfs/theta_project/data/'
+        if socket.gethostname() == 'work':
+            self.dir = '/media/antoinedidisheim/ssd_ntfs/theta_project/data/'
+        else:
+            self.dir = 'data/'
         self.max_opt = 323
-        self.val_split = 0.1
+        self.val_split = 0.01
+        self.dtype = DataType.CRSP_OPTION_1
 
 
 # store all parameters into a single object
@@ -82,6 +92,17 @@ class Params:
 
     def update_model_name(self):
         n = self.name_detail
+        L = 'L'
+        for l in self.model.layers:
+            L += str(l) + '_'
+        n += L
+        n += 'Lr' + str(self.model.learning_rate)
+        n += 'Dropout' + str(self.model.dropout)
+        n += 'BS' + str(self.model.batch_size)
+        n += 'Act' + str(self.model.activation)
+        n += 'OutRange' + str(self.model.output_range)
+        n += 'Dtype' + str(self.data.dtype.name)
+
         self.name = n
 
     def print_values(self):

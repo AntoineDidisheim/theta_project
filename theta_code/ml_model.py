@@ -1,7 +1,3 @@
-##################
-# this implement a simple/pseudo code version that takes as a cost function the fabio theta funciton
-##################
-
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -11,6 +7,7 @@ from data import Data
 from sklearn.metrics import r2_score
 import os
 import pickle
+from matplotlib import pyplot as plt
 tf.random.set_seed(1234)
 np.random.seed(1234)
 
@@ -26,7 +23,7 @@ class NetworkTheta:
         self.data.load_final()
         self.create_network()
 
-        self.save_dir = 'model_save/'+self.par.name+'/'
+        self.save_dir = 'model_save/' + self.par.name + '/'
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
 
@@ -46,8 +43,8 @@ class NetworkTheta:
         p = tf.map_fn(fn=NetworkTheta.g_apply, elems=pred)
         theta = pred[:, -1]
         r2 = r2_score(y, p)
-        mse = np.mean((p-y)**2)
-        return r2, theta, p,mse
+        mse = np.mean((p - y) ** 2)
+        return r2, theta, p, mse
 
     def get_bench_perf(self):
         m = self.data.test_m_df.copy()
@@ -55,7 +52,7 @@ class NetworkTheta:
         m['theta'] = 1.0
         p = tf.map_fn(fn=NetworkTheta.g_apply, elems=m.values)
         r2 = r2_score(y, p)
-        mse = np.mean((p-y)**2)
+        mse = np.mean((p - y) ** 2)
 
         return p, r2, mse
 
@@ -75,7 +72,7 @@ class NetworkTheta:
                 #
                 f = dense(f)
 
-        self.outputs = layers.Dense(1, activation="sigmoid", name='theta_forecast', dtype=tf.float64)(f)
+        self.outputs = layers.Dense(1, activation="sigmoid", name='theta_forecast', dtype=tf.float64)(f)*self.par.model.output_range
         self.outputs = tf.concat([other_inputs, self.outputs], axis=1)
         model = keras.Model(inputs=[theta_x, other_inputs], outputs=self.outputs)
 
@@ -96,7 +93,7 @@ class NetworkTheta:
     def train(self):
         X = [self.data.train_p_df.values, self.data.train_m_df.values]
         y = self.data.train_label_df[['ret']].values
-        save_this_one = self.save_dir+f'{self.data.shuffle_id}/'
+        save_this_one = self.save_dir + f'{self.data.shuffle_id}/'
         if not os.path.exists(save_this_one):
             os.makedirs(save_this_one)
         cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=save_this_one, save_weights_only=True, verbose=0, save_best_only=True)
@@ -105,15 +102,11 @@ class NetworkTheta:
         self.load()
 
     def load(self):
-        save_this_one = self.save_dir+f'{self.data.shuffle_id}/'
+        save_this_one = self.save_dir + f'{self.data.shuffle_id}/'
         if self.model is None:
             self.create_nnet_model()
         self.model.load_weights(save_this_one)
         print('model loaded')
-
-
-
-
 
     ##################
     # static function
@@ -128,7 +121,7 @@ class NetworkTheta:
 
     @staticmethod
     def ddPhi1(S, theta):
-        return (S ** (theta - 2.0)) * (2.0 * theta + (theta - 1.0) * theta * tf.math.log(S) - 1.0)
+        return (S ** (theta - 2.0)) * (theta * (theta - 1) * tf.math.log(S) + 2 * theta - 1)
 
     @staticmethod
     def phi2(S, theta):
@@ -136,7 +129,7 @@ class NetworkTheta:
 
     @staticmethod
     def dPhi2(S, theta):
-        return theta * S ** (theta - 1)
+        return theta * (S ** (theta - 1))
 
     @staticmethod
     def ddPhi2(S, theta):
@@ -148,41 +141,51 @@ class NetworkTheta:
 
     @staticmethod
     def g_apply(m):
-        max_opt = Constant.MAX_OPT  # need to be defined here because cost function has to be static, to fix.
-        # other_X = np.concatenate([kc, kp, calls, puts, rf, fr, Nc, Np], 1)
-        kc = m[:max_opt]
-        kp = m[max_opt:(max_opt * 2)]
-        calls = m[(max_opt * 2):(max_opt * 3)]
-        puts = m[(max_opt * 3):(max_opt * 4)]
-        rf = m[(max_opt * 4):(max_opt * 4 + 1)] + 1.0
-        S = m[(max_opt * 4 + 1):(max_opt * 4 + 2)]
-        Nc = tf.cast(m[(max_opt * 4 + 2):(max_opt * 4 + 3)][0], tf.int64)
-        Np = tf.cast(m[(max_opt * 4 + 3):(max_opt * 4 + 4)][0], tf.int64)
-        theta = m[(max_opt * 4 + 4):(max_opt * 4 + 5)][0]
-        # theta = 0.0
-        calls = calls[:Nc]
-        kc = kc[:Nc]
-        puts = puts[:Np]
-        kp = kp[:Np]
 
-        # fin_kc = fun_der_sec(kc / fr, theta)
-        # fin_kp = fun_der_sec(kp / fr, theta)
+        # old version without numerical split
+        # m = np.concatenate([K, PRICE, rf, s0])
+        K = m[:200]
+        PRICE = m[200:400]
+        rf = m[400]
+        S = m[401]
+        theta = m[402]
 
-        def trapezoidal_integral_approx(t, y):
+        def trapezoidal_integral_approx(t,y):
             return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
 
-        # b1 = trapezoidal_integral_approx(kc, fin_kc*calls)
-        # b2 = trapezoidal_integral_approx(kp, fin_kp*puts)
-        int_phi1_call = trapezoidal_integral_approx(kc, NetworkTheta.ddPhi1(kc, theta) * calls)
-        int_phi1_put = trapezoidal_integral_approx(kp, NetworkTheta.ddPhi1(kp, theta) * puts)
+        int_phi1 = trapezoidal_integral_approx(K, NetworkTheta.ddPhi1(K, theta) * PRICE)
+        int_phi2 = trapezoidal_integral_approx(K, NetworkTheta.ddPhi2(K, theta) * PRICE)
 
-        int_phi2_call = trapezoidal_integral_approx(kc, NetworkTheta.ddPhi2(kc, theta) * calls)
-        int_phi2_put = trapezoidal_integral_approx(kp, NetworkTheta.ddPhi2(kp, theta) * puts)
+        up = NetworkTheta.phi1(S, theta) + NetworkTheta.dPhi1(S, theta) *S* rf + int_phi1
+        down = NetworkTheta.phi2(S, theta) + NetworkTheta.dPhi2(S, theta) *S* rf + int_phi2
+        res = (up / down) - tf.math.log(S)
 
-        up = NetworkTheta.phi1(S, theta) + NetworkTheta.dPhi1(S, theta) * rf + int_phi1_call + int_phi1_put
-        down = NetworkTheta.phi2(S, theta) + NetworkTheta.dPhi2(S, theta) * rf + int_phi2_call + int_phi2_put
-        res = up / down - tf.math.log(S)
+        # v split
 
+        # m = np.concatenate([K, PRICE, rf, s0])
+        # K = m[:200]
+        # PRICE = m[200:400]
+        # rf = m[400]
+        # S = m[401]
+        # theta = m[402]
+        # c_ind = K<=S
+        # p_ind = K >= S
+        # kc = K[c_ind]
+        # kp = K[p_ind]
+        # price_call = PRICE[c_ind]
+        # price_put = PRICE[p_ind]
+        #
+        # def trapezoidal_integral_approx(t, y):
+        #     return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
+        #
+        # int_phi1_call = trapezoidal_integral_approx(kc, NetworkTheta.ddPhi1(kc, theta) * price_call)
+        # int_phi1_put = trapezoidal_integral_approx(kp, NetworkTheta.ddPhi1(kp, theta) * price_put)
+        # int_phi2_call = trapezoidal_integral_approx(kc, NetworkTheta.ddPhi2(kc, theta) * price_call)
+        # int_phi2_put = trapezoidal_integral_approx(kp, NetworkTheta.ddPhi2(kp, theta) * price_put)
+        #
+        # up = NetworkTheta.phi1(S, theta) + NetworkTheta.dPhi1(S, theta) * S * rf + int_phi1_call+int_phi1_put
+        # down = NetworkTheta.phi2(S, theta) + NetworkTheta.dPhi2(S, theta) * S * rf + int_phi2_call+int_phi2_put
+        # res = (up / down) - tf.math.log(S)
         return res
 
     @staticmethod
@@ -190,30 +193,37 @@ class NetworkTheta:
         # p = tf.map_fn(fn=NetworkTheta.g_apply(), elems=y_pred)
         p = tf.map_fn(fn=NetworkTheta.g_apply, elems=y_pred)
 
-        return tf.reduce_mean(tf.losses.MSE(y_true, p))
+        return tf.reduce_mean(tf.losses.MAE(y_true, p))
 
     @staticmethod
     def custom_debug(y_true, y_pred):
         p = tf.map_fn(fn=NetworkTheta.g_apply, elems=y_pred)
         return p
 
-# # # debug
+
+# # # # debug
 # par = Params()
-# # par.model.layers = [64,32,16]
 # par.model.layers = [10]
 # par.model.activation = 'sigmoid'
 # par.model.batch_size = 32
 # par.model.learning_rate = 0.01
 # par.model.E = 5
 # self = NetworkTheta(par)
+# #
+# self.data.move_shuffle()
+# m = self.data.test_m_df
+# m['theta'] = 0.0
+# m = m.values[0,:]
 # # #
-#
-# X = [self.data.p_df.values, self.data.m_df.values]
-# y = self.data.label_df[['ret']].values
-# X_test = [self.data.p_test.values, self.data.m_test.values]
-# y_test = self.data.label_test[['ret']].values
+# pred=NetworkTheta.custom_debug(0,m.values)
+# df=self.data.test_label_df.copy()
+# df['pred'] = pred.numpy()
 #
 #
+# X = [self.data.train_p_df.values, self.data.train_m_df.values]
+# y = self.data.train_label_df[['ret']].values
+# X_test = [self.data.test_p_df.values, self.data.test_m_df.values]
+# y_test = self.data.test_label_df[['ret']].values
 #
 # theta_before = self.get_theta(X_test)
 # pred_os_before=self.get_pred(X_test)
@@ -226,7 +236,7 @@ class NetworkTheta:
 # theta_after = self.get_theta(X_test)
 # print('after train r2 os', r2_score(y_test, pred_os_after))
 # print('after train r2 is', r2_score(y, pred_is_after))
-#
+# #
 #
 #
 # print('theta unchanged:', all(theta_after == theta_before))
