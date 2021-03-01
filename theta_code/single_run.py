@@ -28,24 +28,35 @@ except:
 # Set parameters
 ##################
 par = Params()
-par.data.dtype = DataType.OPTION_1
+par.name_detail = 'Year_year_system_'
+par.model.tex_dir = 'tex_lag_month_version'
+par.data.dtype = DataType.CRSP_OPTION_1
+par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate=1e-2
-par.model.layers = [10]
+par.model.layers = [10,10]
 par.model.batch_size = 32
 par.model.dropout = 0.0
-par.model.output_range = 1.2
+# par.model.output_range = 1.2
+par.model.output_range = 5.0
 par.model.E = 5
 par.data.val_split = 0.1
+par.model.loss = Loss.MAE
 res = []
 
 par.update_model_name()
+par.print_values()
 ##################
 # Create trainer
 ##################
+try:
+    Data(par).load_final()
+except:
+    Data(par).pre_process_all()
 
 trainer = Trainer(par)
+
 self = trainer
 trainer.create_paper()
-# trainer.cv_training()
+trainer.cv_training()
 trainer.create_report_sec()

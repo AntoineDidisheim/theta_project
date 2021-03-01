@@ -36,12 +36,23 @@ class Loss(Enum):
     MAE = 2
 
 
+class CrossValidation(Enum):
+    RANDOM = 1
+    YEAR_BY_YEAR = 2
+    EXPANDING = 3
+
+
 class DataType(Enum):
     COMP_CRSP_OPTION_1 = 1
     OPTION_1 = 2
     COMP_CRSP_1 = 3
     CRSP_1 = 4
     CRSP_OPTION_1 = 5
+
+
+class OptSmooth(Enum):
+    EXT = 1
+    INT = 2
 
 
 ##################
@@ -66,6 +77,9 @@ class ParamsModels:
         self.learning_rate = 0.01
         self.dropout = 0.01
         self.output_range = 1.0
+        self.cv = CrossValidation.YEAR_BY_YEAR
+        self.tex_dir = 'tex_res'
+        self.tex_name = 'theta'
 
 
 class DataParams:
@@ -77,6 +91,7 @@ class DataParams:
         self.max_opt = 323
         self.val_split = 0.01
         self.dtype = DataType.CRSP_OPTION_1
+        self.opt_smooth = OptSmooth.EXT
 
 
 # store all parameters into a single object
@@ -102,7 +117,9 @@ class Params:
         n += 'Act' + str(self.model.activation)
         n += 'OutRange' + str(self.model.output_range)
         n += 'Dtype' + str(self.data.dtype.name)
-
+        n += 'CV' + str(self.model.cv.name)
+        n += 'Loss' + str(self.model.loss.name)
+        n = n.replace('.','')
         self.name = n
 
     def print_values(self):

@@ -26,23 +26,19 @@ except:
 gl = [
     ['model', 'layers', [
         [10],
-        [64,32,16]
+        [10,10]
     ]],
-    # ['model', 'opti', [
-    #     Optimizer.ADAM
-    # ]],
+    ['model', 'loss', [
+        Loss.MSE, Loss.MAE
+    ]],
     ['model', 'batch_size', [
-        16,
-        256
+        32
     ]],
-    ['model', 'learning_rate', [
-        1e-3,
-        0.5e-4
+    ['model', 'output_range', [
+        1,5.0,10.0
     ]],
     ['data', 'dtype', [
-        DataType.COMP_CRSP_OPTION_1,
-        DataType.CRSP_OPTION_1,
-        DataType.OPTION_1
+        DataType.CRSP_OPTION_1
     ]]
 ]
 
@@ -50,13 +46,17 @@ gl = [
 # Set parameters
 ##################
 par = Params()
+par.model.tex_name = 'crsp_only_year_year'
+par.name_detail = 'Year_year_system_'
+par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
-par.model.batch_size = 32
-par.model.E = 10
+par.model.learning_rate=1e-2
+# par.model.batch_size = 32
+par.model.E = 5
 par.data.val_split = 0.1
-res = []
-par.update_param_grid(gl, grid_id)
+par.update_param_grid(gl,grid_id)
 par.update_model_name()
+par.print_values()
 ##################
 # Create trainer
 ##################

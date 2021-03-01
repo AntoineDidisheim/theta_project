@@ -80,14 +80,19 @@ class NetworkTheta:
 
         keras.utils.plot_model(model, "f.png", show_shapes=True, show_layer_names=True)
 
-        optimizer = tf.keras.optimizers.Adam(self.par.model.learning_rate)
+        if self.par.model.opti == Optimizer.ADAM:
+            optimizer = tf.keras.optimizers.Adam(self.par.model.learning_rate)
+        if self.par.model.opti == Optimizer.SGD:
+            optimizer = tf.keras.optimizers.SGD(self.par.model.learning_rate)
+        if self.par.model.opti == Optimizer.RMS_PROP:
+            optimizer = tf.keras.optimizers.RMSprop(self.par.model.learning_rate)
+        if self.par.model.opti == Optimizer.ADAGRAD:
+            optimizer = tf.keras.optimizers.Adagrad(self.par.model.learning_rate)
 
-        # def r_square(y_true, y_pred):
-        #     SS_res = tf.reduce_sum(tf.square(y_true - y_pred))
-        #     SS_tot = tf.reduce_sum(tf.square(y_true - tf.reduce_mean(y_true)))
-        #     return (1 - SS_res / (SS_tot + tf.keras.backend.epsilon()))
-
-        model.compile(loss=NetworkTheta.custom_loss, optimizer=optimizer)
+        if self.par.model.loss == Loss.MAE:
+            model.compile(loss=NetworkTheta.custom_loss_mae, optimizer=optimizer)
+        if self.par.model.loss == Loss.MSE:
+            model.compile(loss=NetworkTheta.custom_loss_mse, optimizer=optimizer)
         self.model = model
 
     def train(self):
@@ -153,6 +158,8 @@ class NetworkTheta:
         def trapezoidal_integral_approx(t,y):
             return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
 
+        # TODO try other approx rules
+
         int_phi1 = trapezoidal_integral_approx(K, NetworkTheta.ddPhi1(K, theta) * PRICE)
         int_phi2 = trapezoidal_integral_approx(K, NetworkTheta.ddPhi2(K, theta) * PRICE)
 
@@ -189,11 +196,14 @@ class NetworkTheta:
         return res
 
     @staticmethod
-    def custom_loss(y_true, y_pred):
-        # p = tf.map_fn(fn=NetworkTheta.g_apply(), elems=y_pred)
+    def custom_loss_mae(y_true, y_pred):
         p = tf.map_fn(fn=NetworkTheta.g_apply, elems=y_pred)
-
         return tf.reduce_mean(tf.losses.MAE(y_true, p))
+
+    @staticmethod
+    def custom_loss_mse(y_true, y_pred):
+        p = tf.map_fn(fn=NetworkTheta.g_apply, elems=y_pred)
+        return tf.reduce_mean(tf.losses.MSE(y_true, p))
 
     @staticmethod
     def custom_debug(y_true, y_pred):
