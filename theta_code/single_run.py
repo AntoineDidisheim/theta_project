@@ -28,9 +28,8 @@ except:
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'Year_year_system_'
-par.model.tex_dir = 'tex_lag_month_version'
-par.data.dtype = DataType.CRSP_OPTION_1
+par.name_detail = 'New_Version_'
+par.model.tex_dir = 'New_Version_'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate=1e-2
@@ -42,6 +41,8 @@ par.model.output_range = 5.0
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MAE
+par.data.opt_smooth = OptSmooth.INT
+par.data.comp = True
 res = []
 
 par.update_model_name()
@@ -49,6 +50,7 @@ par.print_values()
 ##################
 # Create trainer
 ##################
+# Data(par).load_final()
 try:
     Data(par).load_final()
 except:

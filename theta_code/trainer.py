@@ -104,8 +104,11 @@ class Trainer:
                                    rf"\item Loss {self.par.model.loss.name}" + '\n' \
                                    rf"\item Output range {self.par.model.output_range}" + '\n' \
                                    rf"\item Batch size {self.par.model.batch_size}" + '\n' \
-                                    r"\end{enumerate}" + '\n' \
-                                                         rf"We use the dataset {self.par.data.dtype.name.replace('_','').replace('.','')}" + '\n'
+                                   rf"\item Option input {self.par.data.opt}" + '\n' \
+                                   rf"\item Compustat input {self.par.data.comp}" + '\n' \
+                                   rf"\item CRSP input {self.par.data.crsp}" + '\n' \
+                                    r"\end{enumerate}" + '\n'
+
 
         self.paper.append_text_to_sec(sec_name=par.name, text=model_description.replace('_', ' '))
 

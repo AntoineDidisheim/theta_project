@@ -36,18 +36,19 @@ class Loss(Enum):
     MAE = 2
 
 
+
+class ReturnType(Enum):
+    LOG = 1
+    RET = 2
+
+
 class CrossValidation(Enum):
     RANDOM = 1
     YEAR_BY_YEAR = 2
     EXPANDING = 3
 
 
-class DataType(Enum):
-    COMP_CRSP_OPTION_1 = 1
-    OPTION_1 = 2
-    COMP_CRSP_1 = 3
-    CRSP_1 = 4
-    CRSP_OPTION_1 = 5
+
 
 
 class OptSmooth(Enum):
@@ -90,8 +91,14 @@ class DataParams:
             self.dir = 'data/'
         self.max_opt = 323
         self.val_split = 0.01
-        self.dtype = DataType.CRSP_OPTION_1
+
         self.opt_smooth = OptSmooth.EXT
+
+        self.crsp = True
+        self.comp =False
+        self.opt = True
+
+        self.ret = ReturnType.RET
 
 
 # store all parameters into a single object
@@ -116,9 +123,16 @@ class Params:
         n += 'BS' + str(self.model.batch_size)
         n += 'Act' + str(self.model.activation)
         n += 'OutRange' + str(self.model.output_range)
-        n += 'Dtype' + str(self.data.dtype.name)
         n += 'CV' + str(self.model.cv.name)
         n += 'Loss' + str(self.model.loss.name)
+        n+='d'
+        if self.data.opt:
+            n+='Opt'
+        if self.data.comp:
+            n+='Comp'
+        if self.data.crsp:
+            n+='Crsp'
+        n+=str(self.data.opt_smooth.name)
         n = n.replace('.','')
         self.name = n
 

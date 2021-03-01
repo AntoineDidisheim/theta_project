@@ -12,53 +12,6 @@ from scipy.interpolate import interp1d
 
 class RawData:
     def __init__(self, par, freq='monthly'):
-        # crsp = pd.read_csv(par.data.dir + f'raw/crsp_{freq}.csv')
-        # # crsp = pd.read_csv(par.data.dir+'crsp_monthly.csv')
-        # crsp['date'] = pd.to_datetime(crsp['date'], format='%Y%m%d')
-        # crsp = crsp.rename(columns={'PRC': 'price', 'RET': 'ret', 'VOL': 'vol', 'SHROUT': 'share', 'TICKER': 'tic', 'CFACPR': 'adj'})
-        # del crsp['ACPERM'], crsp['ACCOMP'], crsp['NWPERM']
-        # crsp['ret'] = pd.to_numeric(crsp['ret'], errors='coerce')
-        # crsp['tic'] = crsp['tic'].astype('str')
-        # crsp = crsp.dropna()
-        # if freq == 'monthly':
-        #     crsp['crsp_date'] = crsp['date'].values
-        #     crsp['date'] = crsp['date'].dt.year * 100 + crsp['date'].dt.month
-        #     crsp['date'] = pd.to_datetime(crsp['date'], format='%Y%m')
-        # self.crsp = crsp
-        #
-        # compustat = pd.read_csv(par.data.dir + 'raw/compustat_quarterly.csv')
-        # compustat = compustat.rename(columns={'datadate': 'date', 'fyearq': 'year', 'fqtr': 'quarter', 'atq': 'asset',
-        #                                       'dlttq': 'debt', 'ibq': 'income', 'mkvaltk': 'mkt_cap',
-        #                                       'LINKENDDT': 'd_end', 'LINKDT': 'd_start','GVKEY':'gvkey'}) \
-        #     .drop(columns=['indfmt', 'consol', 'popsrc', 'datafmt', 'curcdq', 'datacqtr', 'datafqtr', 'costat'])
-        # compustat['date'] = pd.to_datetime(compustat['date'], format='%Y%m%d')
-        #
-        # compustat.loc[compustat['d_end'].max() == compustat['d_end'], 'd_end'] = compustat.loc[compustat['d_end'] != 'E', 'd_end'].max()
-        # compustat['d_start'] = pd.to_datetime(compustat['d_end'], format='%Y%m%d')
-        # compustat['d_end'] = pd.to_datetime(compustat['d_end'], format='%Y%m%d')
-        #
-        # if freq == 'monthly':
-        #     compustat['date'] = compustat['date'].dt.year * 100 + compustat['date'].dt.month
-        #     compustat['date'] = pd.to_datetime(compustat['date'], format='%Y%m')
-        # # del compustat['tic']
-        # compustat = compustat.rename(columns={'LPERMNO': 'PERMNO'})
-        #
-        # self.compustat = compustat
-        #
-        # compustat_yearly = pd.read_csv(par.data.dir + 'raw/compustat_yearly.csv')
-        # compustat_yearly = compustat_yearly.rename(columns={'datadate': 'date', 'fyearq': 'year', 'fqtr': 'quarter', 'ib': 'income', 'ticker': 'tic'
-        #     , 'fyear': 'year', 'LINKENDDT': 'd_end', 'LINKDT': 'd_start','GVKEY':'gvkey'}) \
-        #     .drop(columns=['indfmt', 'consol', 'date', 'popsrc', 'curcd', 'datafmt', 'costat'])
-        #
-        # compustat_yearly = compustat_yearly.dropna()
-        # compustat_yearly['year'] = compustat_yearly['year'].astype(int)
-        #
-        # compustat_yearly = compustat_yearly.rename(columns={'LPERMNO': 'PERMNO'})
-        # compustat_yearly.loc[compustat_yearly['d_end'].max() == compustat_yearly['d_end'], 'd_end'] = compustat_yearly.loc[compustat_yearly['d_end'] != 'E', 'd_end'].max()
-        # compustat_yearly['d_start'] = pd.to_datetime(compustat_yearly['d_end'], format='%Y%m%d')
-        # compustat_yearly['d_end'] = pd.to_datetime(compustat_yearly['d_end'], format='%Y%m%d')
-        #
-        # self.compustat_yearly = compustat_yearly
 
         ff = pd.read_csv(par.data.dir + f'raw/ff3_{freq}.csv').merge(pd.read_csv(par.data.dir + f'raw/ffM_{freq}.csv'))
         ff = ff.rename(columns={'Unnamed: 0': 'date', 'Mkt-RF': 'mkt-rf', 'RF': 'rf', 'SMB': 'smb', 'HML': 'hml', 'Mom   ': 'mom'})
@@ -92,11 +45,27 @@ class Data:
         self.shuffle_id = 0
 
         ##################
+        # set name
+        ##################
+        self.name = 'd_'
+        if self.par.data.opt:
+            self.name+='Opt'
+        if self.par.data.comp:
+            self.name+='Comp'
+        if self.par.data.crsp:
+            self.name+='Crsp'
+
+        self.name+=str(self.par.data.opt_smooth.name)
+
+
+        ##################
         # make dir
         ##################
         self.make_dir(f"{self.par.data.dir}int_gen")
-        self.make_dir(f"{self.par.data.dir}{self.par.data.dtype.name}/side")
-        self.make_dir(f'{self.par.data.dir}{self.par.data.dtype.name}/int/')
+        self.make_dir(f"{self.par.data.dir}{self.name}/side")
+        self.make_dir(f'{self.par.data.dir}{self.name}/int/')
+
+
 
     def make_dir(self, dir):
         if not os.path.exists(dir):
@@ -127,6 +96,7 @@ class Data:
 
 
 
+
     def move_shuffle(self):
         if self.ind_order_list is None:
             t = list(self.label_df.index.copy())
@@ -154,9 +124,9 @@ class Data:
 
     def load_final(self):
         # finally save all
-        self.m_df = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/m_df.p').reset_index(drop=True)
-        self.p_df = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/pred_df.p').reset_index(drop=True)
-        self.label_df = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/label_df.p').reset_index(drop=True)
+        self.m_df = pd.read_pickle(self.par.data.dir + f'{self.name}/m_df.p').reset_index(drop=True)
+        self.p_df = pd.read_pickle(self.par.data.dir + f'{self.name}/pred_df.p').reset_index(drop=True)
+        self.label_df = pd.read_pickle(self.par.data.dir + f'{self.name}/label_df.p').reset_index(drop=True)
 
         # deal with remaining inf
         self.p_df = self.p_df.replace({-np.inf: np.nan, np.inf: np.nan})
@@ -169,13 +139,14 @@ class Data:
         self.p_df = self.p_df.clip(-3.0, 3.0)
 
     def load_and_merge_pred_opt(self):
-        cleaner = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/side/cleaner_all.p')
+        cleaner = pd.read_pickle(self.par.data.dir + f'{self.name}/side/cleaner_all.p')
         opt = self.load_opt()
 
-        if self.par.data.dtype in [DataType.COMP_CRSP_OPTION_1, DataType.COMP_CRSP_1]:
-            pred = self.load_pred_compustat_and_crsp()
-        if self.par.data.dtype in [DataType.CRSP_1, DataType.CRSP_OPTION_1]:
-            pred = self.load_pred_crsp_only()
+        if self.par.data.crsp:
+            if self.par.data.comp:
+                pred = self.load_pred_compustat_and_crsp()
+            else:
+                pred = self.load_pred_crsp_only()
 
         # pred['month'] = pred['date'].dt.year * 100 + pred['date'].dt.month
         # del pred['date']
@@ -192,18 +163,19 @@ class Data:
         ind = df['cp'] == 'P'
         mp = df.loc[ind, :].groupby(['date', 'gvkey'])['ret'].count().max()
         print('Max nb call/put in sample:', mc, mp)
-        cleaner.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/side/cleaner_after_merge.csv')
+        cleaner.to_pickle(self.par.data.dir + f'{self.name}/side/cleaner_after_merge.csv')
         return df
 
     def create_a_dataset(self):
 
-        if self.par.data.dtype in [DataType.COMP_CRSP_1, DataType.COMP_CRSP_OPTION_1]:
-            pred = self.load_pred_compustat_and_crsp()
-        if self.par.data.dtype in [DataType.CRSP_OPTION_1, DataType.CRSP_1]:
-            pred = self.load_pred_crsp_only()
+        if self.par.data.crsp:
+            if self.par.data.comp:
+                pred = self.load_pred_compustat_and_crsp()
+            else:
+                pred = self.load_pred_crsp_only()
 
         # specify here the list of DataType which do not need to be merge with any dataset
-        if self.par.data.dtype in [DataType.OPTION_1]:
+        if self.par.data.opt and ~self.par.data.comp and ~self.par.data.crsp:
             df = self.load_opt()
             raw = RawData(self.par, 'daily')
             df = df.merge(raw.ff[['date', 'rf']])
@@ -219,7 +191,7 @@ class Data:
         t = df[['date', 'gvkey', 'ret']].drop_duplicates().reset_index(drop=True)
         M = []
         P = []
-        i = 1000
+        # i = 1000
         for i in range(t.shape[0]):
             id = t[['date', 'gvkey']].iloc[i, :]
             ind = (df['date'] == id['date']) & (df['gvkey'] == id['gvkey'])
@@ -233,7 +205,7 @@ class Data:
                 print(i, '/', t.shape[0])
 
         iv_col = ['iv' + str(x) for x in np.arange(80, 130, 10)]
-        if self.par.data.dtype in [DataType.OPTION_1, DataType.CRSP_OPTION_1, DataType.COMP_CRSP_OPTION_1]:
+        if self.par.data.opt:
             pred_col = pred_col + iv_col
         m_df = pd.DataFrame(M)
         p_df = pd.DataFrame(P, columns=pred_col)
@@ -251,14 +223,14 @@ class Data:
         t = t.loc[ind, :].reset_index(drop=True)
 
         # finally save all
-        m_df.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/m_df.p')
-        p_df.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/pred_df.p')
-        t.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/label_df.p')
+        m_df.to_pickle(self.par.data.dir + f'{self.name}/m_df.p')
+        p_df.to_pickle(self.par.data.dir + f'{self.name}/pred_df.p')
+        t.to_pickle(self.par.data.dir + f'{self.name}/label_df.p')
 
         # debug
-        # m_df = pd.read_pickle(self.par.data.dir+f'{self.par.data.dtype.name}/m_df.p')
-        # p_df = pd.read_pickle(self.par.data.dir+f'{self.par.data.dtype.name}/pred_df.p')
-        # t = pd.read_pickle(self.par.data.dir+f'{self.par.data.dtype.name}/label_df.p')
+        # m_df = pd.read_pickle(self.par.data.dir+f'{self.name}/m_df.p')
+        # p_df = pd.read_pickle(self.par.data.dir+f'{self.name}/pred_df.p')
+        # t = pd.read_pickle(self.par.data.dir+f'{self.name}/label_df.p')
 
     def pre_process_day(self, day, pred_col):
         # create the filler function
@@ -279,13 +251,14 @@ class Data:
             K = np.linspace(s0*0.5,s0*1.5,200)
         if self.par.data.opt_smooth == OptSmooth.INT:
             K = np.linspace(t['strike'].min(), t['strike'].max(), 200)
-        assert len(K) == 200, 'Problem with the linespace, line 262'
+        assert len(K) == 200, 'Problem with the linespace'
+
         PRICE = cb(K)
         #
-        plt.plot(t['strike'], t['opt_price'])
-        plt.scatter(t['strike'], t['opt_price'])
-        plt.plot(K, PRICE)
-        plt.show()
+        # plt.plot(t['strike'], t['opt_price'])
+        # plt.scatter(t['strike'], t['opt_price'])
+        # plt.plot(K, PRICE)
+        # plt.show()
 
         t = day.loc[:, ['strike', 'impl_volatility']].copy().sort_values(['strike', 'impl_volatility']).reset_index(drop=True).groupby('strike').mean().reset_index()
         cb = CubicSpline(t['strike'], t['impl_volatility'])
@@ -293,8 +266,11 @@ class Data:
         X = s0 * np.arange(0.8, 1.3, 0.1)
         IV = cb(X)
 
-        m = np.concatenate([K, PRICE, rf, s0])
-        if self.par.data.dtype in [DataType.OPTION_1, DataType.CRSP_OPTION_1, DataType.COMP_CRSP_OPTION_1]:
+        if self.par.data.opt_smooth == OptSmooth.EXT:
+            m = np.concatenate([K[:,0], PRICE[:,0], rf, s0])
+        if self.par.data.opt_smooth == OptSmooth.INT:
+            m = np.concatenate([K, PRICE, rf, s0])
+        if self.par.data.opt:
             p = day.loc[:, pred_col].iloc[0, :].values
         p = np.concatenate([p, IV])
 
@@ -479,7 +455,7 @@ class Data:
 
         print('#' * 10, 'final cleaner of year', year, '#' * 10)
         print(cleaner)
-        cleaner.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/side/cleaner_{year}.p')
+        cleaner.to_pickle(self.par.data.dir + f'{self.name}/side/cleaner_{year}.p')
         return df, cleaner
 
     def clean_opt_all(self):
@@ -494,9 +470,9 @@ class Data:
         c = cleaner[0]
         for i in range(1, len(cleaner)):
             c += cleaner[i]
-        c.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/side/cleaner_all.p')
+        c.to_pickle(self.par.data.dir + f'{self.name}/side/cleaner_all.p')
 
-        df.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/opt.p')
+        df.to_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
 
     def load_all_price(self, reload=False):
         if reload:
@@ -531,9 +507,9 @@ class Data:
 
             df = df.sort_values(['gvkey', 'date']).reset_index(drop=True)
 
-            df.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/price.p')
+            df.to_pickle(self.par.data.dir + f'{self.name}/int/price.p')
         else:
-            df = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/price.p')
+            df = pd.read_pickle(self.par.data.dir + f'{self.name}/int/price.p')
         return df
 
     def count_sample(self, df, n=''):
@@ -574,7 +550,7 @@ class Data:
         return df
 
     def load_opt(self):
-        df = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/opt.p')
+        df = pd.read_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
         return df
 
     def load_pred_crsp_only(self, reload=False):
@@ -670,9 +646,9 @@ class Data:
             final = final.merge(raw.ff)
             var_list = var_list + list(raw.ff.iloc[:, 1:].columns)
             final = final[['gvkey', 'date'] + var_list].copy()
-            final.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/pred_crsp.p')
+            final.to_pickle(self.par.data.dir + f'{self.name}/int/pred_crsp.p')
         else:
-            final = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/pred_crsp.p')
+            final = pd.read_pickle(self.par.data.dir + f'{self.name}/int/pred_crsp.p')
         return final
 
     def load_pred_compustat_and_crsp(self, reload=False):
@@ -799,9 +775,9 @@ class Data:
             final = final.merge(raw.ff)
             var_list = var_list + list(raw.ff.iloc[:, 1:].columns)
             final = final[['gvkey', 'date'] + var_list].copy()
-            final.to_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/pred_crsp_compustat.p')
+            final.to_pickle(self.par.data.dir + f'{self.name}/int/pred_crsp_compustat.p')
         else:
-            final = pd.read_pickle(self.par.data.dir + f'{self.par.data.dtype.name}/int/pred_crsp_compustat.p')
+            final = pd.read_pickle(self.par.data.dir + f'{self.name}/int/pred_crsp_compustat.p')
         return final
 
     def get_beta(self, freq='daily'):
@@ -814,8 +790,10 @@ class Data:
             r = 12
 
         raw = RawData(self.par, freq)
-
-        df = raw.ff.merge(self.load_all_price(), how='inner', on='date')
+        try:
+            df = raw.ff.merge(self.load_all_price(False), how='inner', on='date')
+        except:
+            df = raw.ff.merge(self.load_all_price(True), how='inner', on='date')
         if freq == 'monthly':
             ret_v = 'ret'
         else:
@@ -832,7 +810,7 @@ class Data:
                 return np.nan
 
         date = df['date'].min() + pd.DateOffset(months=r)
-        date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
+        # date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
         date_end = df['date'].max()
 
         res = []
@@ -841,9 +819,9 @@ class Data:
             t = df.loc[ind, :].groupby('gvkey').apply(get_delta)
             t.name = date
             res.append(t)
-            date += pd.DateOffset(months=1)
-            date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
-            if date.month == 1:
+            date += pd.DateOffset(days=1)
+            # date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
+            if date.day == 1:
                 print(date)
 
         t = pd.DataFrame(res)
@@ -868,7 +846,12 @@ class Data:
         else:
             r = 12
         raw = RawData(self.par, freq)
-        df = raw.ff.merge(self.load_all_price(), how='inner', on='date')
+
+        try:
+            df = raw.ff.merge(self.load_all_price(False), how='inner', on='date')
+        except:
+            df = raw.ff.merge(self.load_all_price(True), how='inner', on='date')
+
         if freq == 'monthly':
             ret_v = 'ret'
         else:
@@ -885,7 +868,7 @@ class Data:
                 return np.nan
 
         date = df['date'].min() + pd.DateOffset(months=r)
-        date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
+        # date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
 
         date_end = df['date'].max()
 
@@ -895,9 +878,9 @@ class Data:
             t = df.loc[ind, :].groupby('gvkey').apply(get_std)
             t.name = date
             res.append(t)
-            date += pd.DateOffset(months=1)
-            date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
-            if date.month == 1:
+            date += pd.DateOffset(days=1)
+            # date = pd.to_datetime(date.year * 100 + date.month, format='%Y%m')
+            if date.day == 1:
                 print(date)
 
         t = pd.DataFrame(res)
@@ -926,17 +909,21 @@ class Data:
         self.load_all_price(reload=True)
         self.clean_opt_all()
 
-        if self.par.data.dtype in [DataType.CRSP_1, DataType.CRSP_OPTION_1]:
-            self.load_pred_crsp_only(reload=True)
-        if self.par.data.dtype in [DataType.COMP_CRSP_OPTION_1, DataType.COMP_CRSP_1]:
-            self.load_pred_compustat_and_crsp(reload=True)
+        if self.par.data.crsp:
+            if self.par.data.comp:
+                self.load_pred_compustat_and_crsp(reload=True)
+            else:
+                self.load_pred_crsp_only(reload=True)
 
         self.create_a_dataset()
 
 
 par = Params()
-par.data.dtype = DataType.CRSP_OPTION_1
+# par.data.crsp=False
 self = Data(par)
+self.gen_all_int()
+# freq='daily'
+# self.pre_process_all()
 # df=self.load_all_price()
 #
 # df['S0'].min()
