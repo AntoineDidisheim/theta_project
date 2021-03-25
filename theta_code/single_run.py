@@ -47,8 +47,8 @@ par.model.output_range = 1.2
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MSE
-par.data.opt_smooth = OptSmooth.INT
-par.data.min_opt_per_day = 15
+par.data.opt_smooth = OptSmooth.EXT
+par.data.min_opt_per_day = 10
 par.data.comp = True
 par.data.ret = ReturnType.LOG
 

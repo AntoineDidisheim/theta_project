@@ -91,7 +91,7 @@ class Trainer:
 
         self.paper.create_new_sec(sec_name=par.name)
         self.paper.append_text_to_sec(sec_name=par.name, text="\\clearpage \n \n")
-        self.paper.append_text_to_sec(sec_name=par.name, text=r"\subsection{" + self.par.name + "}".replace('_', ' ').replace('.',''))
+        self.paper.append_text_to_sec(sec_name=par.name, text=r"\subsection{" + self.par.name.replace('_', ' ').replace('.','')+"}")
 
         L = "Layer: ("
         for l in self.par.model.layers:
@@ -134,7 +134,7 @@ class Trainer:
         df = df.merge(t, how='left')
         t=Data(self.par).historical_theta()
         df = df.merge(t[['date','gvkey','pred']].rename(columns={'pred':'hist_theta'}), how='left')
-        t = Data(self.par).load_all_price()
+        t = Data(self.par).load_all_price(False)
         t['year'] = t['date'].dt.year
         df['year'] =  df['date'].dt.year
         t=t.groupby('year')['ret'].mean().reset_index()
@@ -306,6 +306,33 @@ class Trainer:
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'theta_hist.png')
         self.plt_show()
+
+        yy = df.groupby('year')['pred'].count()
+        yy=np.array(list(yy[yy>=200].index))
+        N = []
+        # col_nb=3
+        # ly = np.ceil(len(yy)/col_nb)
+        # plt.figure(figsize=(col_nb*6.4,ly*4.8))
+        for i in range(1, len(yy)+1):
+            # plt.subplot(ly,col_nb,i)
+            ind = df['year']==yy[i-1]
+            plt.hist(df.loc[ind,'theta'], bins=100, color=didi.DidiPlot.COLOR[0])
+            # plt.xlabel(yy[i-1])
+            plt.xlabel(r'$\theta$')
+            plt.xlim(df['theta'].min(),df['theta'].max())
+            plt.tight_layout()
+            plt.savefig(self.dir_figs + f'theta_hist_{yy[i-1]}.png')
+            N.append(f'theta_hist_{yy[i-1]}')
+            self.plt_show()
+
+
+        self.paper.append_fig_to_sec(fig_names=N, sec_name=par.name, sub_dir=par.name,fig_captions=[str(x) for x in yy],
+                                     size=r'0.3\linewidth',
+                                     main_caption=r"The figures above show the distribution of the predicted $\theta$ split year per year. "
+                                                  r"We only show years with at least 200 observations")
+
+
+
 
         k = 0
 
