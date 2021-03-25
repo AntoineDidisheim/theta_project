@@ -1394,8 +1394,8 @@ par.data.opt_smooth = OptSmooth.EXT
 par.data.comp = True
 par.data.ret = ReturnType.LOG
 self = Data(par)
-self.create_a_dataset()
-
+# self.create_a_dataset()
+self.pre_process_all()
 # self.gen_all_int()
 
 # self.historical_theta(reload=True)
