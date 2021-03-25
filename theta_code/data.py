@@ -1362,6 +1362,7 @@ class Data:
         # # pre-process option
         self.load_all_price(reload=True)
         self.clean_opt_all()
+        self.martin_wagner_var_mkt(reload=True)
         self.marting_wagner_return(reload=True)
         print('start',flush=True)
 
@@ -1372,7 +1373,6 @@ class Data:
                 self.load_pred_crsp_only(reload=True)
 
         self.create_a_dataset()
-        self.martin_wagner_var_mkt(reload=True)
         # self.historical_theta(reload=True)
 
 
