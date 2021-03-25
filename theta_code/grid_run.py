@@ -36,9 +36,6 @@ gl = [
     ]],
     ['model', 'output_range', [
         1,5.0,10.0
-    ]],
-    ['data', 'dtype', [
-        DataType.CRSP_OPTION_1
     ]]
 ]
 

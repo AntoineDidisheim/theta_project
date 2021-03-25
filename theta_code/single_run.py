@@ -8,6 +8,7 @@ from trainer import Trainer
 from ml_model import NetworkTheta
 import time
 import sys
+import didipack as didi
 
 print('#####################################')
 print('list', sys.argv)
@@ -25,25 +26,32 @@ except:
 
 
 ##################
+
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'New_Version_'
-par.model.tex_dir = 'New_Version_'
+par.name_detail = 'back'
+par.model.tex_dir = 'back'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
-par.model.learning_rate=1e-2
-par.model.layers = [10,10]
+par.model.learning_rate = 1e-2
+par.model.layers = [10]
 par.model.batch_size = 32
+# par.model.layers = [64,32,16]
+# par.model.batch_size = 256
+
 par.model.dropout = 0.0
-# par.model.output_range = 1.2
-par.model.output_range = 5.0
+# par.model.dropout = 0.4
+par.model.output_range = 1.2
+# par.model.output_range = 5.0
 par.model.E = 5
 par.data.val_split = 0.1
-par.model.loss = Loss.MAE
+par.model.loss = Loss.MSE
 par.data.opt_smooth = OptSmooth.INT
+par.data.min_opt_per_day = 15
 par.data.comp = True
-res = []
+par.data.ret = ReturnType.LOG
+
 
 par.update_model_name()
 par.print_values()
@@ -55,6 +63,8 @@ try:
     Data(par).load_final()
 except:
     Data(par).pre_process_all()
+# Data(par).create_a_dataset()
+
 
 trainer = Trainer(par)
 

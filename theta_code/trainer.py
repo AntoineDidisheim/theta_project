@@ -43,6 +43,7 @@ class Trainer:
     def plt_show(self):
         plt.close()
 
+
     def create_paper(self):
         self.paper.create_paper(self.par.model.tex_name, sec=['Results'], author="Antoine Didisheim, Fabio Trojani, Simon Scheidegger", title="Theta Project")
 
@@ -107,6 +108,7 @@ class Trainer:
                                    rf"\item Option input {self.par.data.opt}" + '\n' \
                                    rf"\item Compustat input {self.par.data.comp}" + '\n' \
                                    rf"\item CRSP input {self.par.data.crsp}" + '\n' \
+                                   rf"\item ret max: {self.par.data.max_ret}, min {self.par.data.min_ret}" + '\n' \
                                     r"\end{enumerate}" + '\n'
 
 
@@ -116,6 +118,78 @@ class Trainer:
 
         df['error_bench'] = (df['ret'] - df['bench']).abs()
         df['error_pred'] = (df['ret'] - df['pred']).abs()
+        df.describe(np.arange(0,1.05,0.05)).round(3)
+
+
+        if self.par.data.ret == ReturnType.LOG:
+            ret_type_str = 'log(R)'
+        else:
+            ret_type_str  ='R'
+
+        ##################
+        # multiple r2
+        ##################
+        ## add marting wagner
+        t=Data(self.par).marting_wagner_return()
+        df = df.merge(t, how='left')
+        t=Data(self.par).historical_theta()
+        df = df.merge(t[['date','gvkey','pred']].rename(columns={'pred':'hist_theta'}), how='left')
+        t = Data(self.par).load_all_price()
+        t['year'] = t['date'].dt.year
+        df['year'] =  df['date'].dt.year
+        t=t.groupby('year')['ret'].mean().reset_index()
+        t[r'$\bar{MKT}_{t-1}$']=t['ret'].shift()
+        t = t.rename(columns={'ret':r'$\bar{MKT}_{t}$'})
+        overall_average =  Data(self.par).load_all_price()['ret'].mean()
+        df=df.merge(t)
+
+        t = Data(self.par)
+        t.load_final()
+        t.label_df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = (t.p_df['beta_monthly']*t.p_df['mkt-rf'])/100
+        df=df.merge(t.label_df)
+
+        def r2(df_,y_bar, name='NNET'):
+            if np.sum(pd.isna(y_bar))>0:
+                df_ = df_.loc[~pd.isna(y_bar),:]
+
+            r2_pred = 1 - ((df_['ret'] - df_['pred']) ** 2).sum() / ((df_['ret'] - y_bar) ** 2).sum()
+            return (pd.Series({name: r2_pred})*100).round(2)
+
+        df.describe(np.arange(0,1.05,0.05))
+        ind = (df['ret']>=-0.5) & (df['ret']<=0.5)
+        df = df.loc[ind,:]
+        def get_all_r(df):
+            r=[
+                r2(df,(1.06)**(1/12)-1,r'6\% premium'),
+                r2(df,df['MW'],'Martin Wagner'),
+                r2(df,0.0, r'$R=0.0$'),
+                r2(df, df['hist_theta'],r'historical $\theta$'),
+                r2(df, df['bench'],r'$\theta=1.0$'),
+                r2(df, df[r'$\bar{MKT}_{t}$'],r'$\bar{MKT}_{t}$'),
+                r2(df, df[r'$\bar{MKT}_{t-1}$'],r'$\bar{MKT}_{t-1}$'),
+                r2(df, overall_average,r'$\bar{MKT}$'),
+                r2(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$')
+
+            ]
+            return pd.concat(r).sort_values()
+
+        df['year'] = df['date'].dt.year
+        t=df.groupby('year').apply(lambda x: get_all_r(x)).reset_index()
+        t.columns = ['Year','Type',r'$R^2$']
+        t=t.pivot(columns='Year',index='Type')
+        t['All'] = get_all_r(df)
+        t=t.sort_values('All')
+        tt = df.groupby('year')['date'].count()
+        tt['All'] = df.shape[0]
+        t  = t.T
+        t['nb. obs'] = tt.values
+        t = t.T
+        t.loc['nb. obs',:]
+
+
+        t.to_latex(self.dir_tables+'all_r2.tex', escape=False)
+        self.paper.append_table_to_sec(table_name='all_r2.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
+                                       caption='The table below shows the out of sample $R^2$ of our model against various benchmark')
 
         ##################
         # r2 plots
@@ -134,7 +208,7 @@ class Trainer:
         plt.plot(yy.index, yy.iloc[:, 1]*100, label=yy.columns[1], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1])
         plt.grid(True)
         plt.legend()
-        plt.ylabel(r'$R^2 * 100$')
+        plt.ylabel(r'$R^2$')
         plt.xlabel('Year')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'r2_ts.png')
@@ -155,7 +229,7 @@ class Trainer:
         plt.legend()
         plt.grid()
         plt.xlabel('Date')
-        plt.ylabel('Predicted log(R)')
+        plt.ylabel(f'Predicted {ret_type_str}')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'mean_pred.png')
         self.plt_show()
@@ -164,12 +238,20 @@ class Trainer:
         for q in [0.25, 0.5, 0.75]:
             t = df.groupby('date')[['pred', 'bench']].quantile(q).rolling(12).mean()
             k += 1
-            plt.plot(t.index, t['pred'], label=rf'NNET, q={q}', color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[k])
-            plt.plot(t.index, t['bench'], label=rf'$\theta=1$, q={q}', color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[k])
+            if self.par.data.ret == ReturnType.LOG:
+                pred = t['pred']*12
+                bench = t['bench']*12
+            if self.par.data.ret == ReturnType.RET:
+                pred = (t['pred']+1)**12-1
+                bench = (t['bench']+1)**12-1
+
+
+            plt.plot(t.index, pred, label=rf'NNET, q={q}', color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[k])
+            plt.plot(t.index, bench, label=rf'$\theta=1$, q={q}', color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[k])
         plt.grid()
         plt.legend()
         plt.xlabel('Date')
-        plt.ylabel('Predicted log(R)')
+        plt.ylabel(f'Predicted {ret_type_str}')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'q_pred.png')
         self.plt_show()
@@ -237,7 +319,7 @@ class Trainer:
         plt.grid()
         plt.legend()
         plt.xlabel('Date')
-        plt.ylabel('Predicted log(R)')
+        plt.ylabel(f'Predicted {ret_type_str}')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'theta_ts.png')
         self.plt_show()
@@ -278,7 +360,7 @@ class Trainer:
         plt.plot(q_final.index, q_final.iloc[:, 1], label=q_final.columns[1], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1])
         plt.grid(True)
         plt.legend()
-        plt.ylabel(r'log(R)')
+        plt.ylabel(rf'{ret_type_str}')
         plt.xlabel('Quantile')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'quantile_portfolio.png')
@@ -313,7 +395,7 @@ class Trainer:
         self.paper.append_fig_to_sec(fig_names=["quantile_portfolio", "quantile_v2"], sec_name=par.name, sub_dir=par.name,
                                      main_caption=fr"The figures above show two construction of quantile's protfolios. "
                                                   fr"The left panel (a), shows the return of quantile portfolio for both definition of $\theta$. "
-                                                  fr"On each day, we split the cross-section of firm based on the forecasted average log(R) and construct protfolio. "
+                                                  fr"On each day, we split the cross-section of firm based on the forecasted average {ret_type_str} and construct protfolio. "
                                                   fr"We take the average return of each quantile on each day to get daily returns per quantiles. "
                                                   fr"Finally, we take the average across time to get the quantile average daily log-return for each quantile."
                                                   fr"The right panel (b) sort the predictions into quantile panel wise and show on the x-axis the average realized return, an the y-axis "

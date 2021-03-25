@@ -97,8 +97,15 @@ class DataParams:
         self.crsp = True
         self.comp =False
         self.opt = True
+        self.mw = True
+        self.hist_theta = True
+        self.last_friday = False
+        self.min_opt_per_day = 10
 
-        self.ret = ReturnType.RET
+        self.max_ret = 0.2
+        self.min_ret = -0.2
+
+        self.ret = ReturnType.LOG
 
 
 # store all parameters into a single object
@@ -125,13 +132,19 @@ class Params:
         n += 'OutRange' + str(self.model.output_range)
         n += 'CV' + str(self.model.cv.name)
         n += 'Loss' + str(self.model.loss.name)
-        n+='d'
+        n+='Ret'+str(self.data.ret.name)
+        n+=f'd{self.data.min_opt_per_day}'
         if self.data.opt:
             n+='Opt'
         if self.data.comp:
             n+='Comp'
         if self.data.crsp:
             n+='Crsp'
+        if self.data.mw:
+            self.name += 'MW'
+        if self.data.last_friday:
+            self.name += 'LF'
+
         n+=str(self.data.opt_smooth.name)
         n = n.replace('.','')
         self.name = n
