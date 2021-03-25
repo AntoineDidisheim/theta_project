@@ -357,9 +357,9 @@ class Data:
 
         df['dw'] = df['date'].dt.dayofweek
         df['dw'].hist(bins=25)
-        plt.title('Day of week no clean')
-        plt.savefig('res/data/day_week_split_c1.png')
-        plt.close()
+        # plt.title('Day of week no clean')
+        # plt.savefig('res/data/day_week_split_c1.png')
+        # plt.close()
 
         df['T'] = (df['exdate'] - df['date']).dt.days
 
