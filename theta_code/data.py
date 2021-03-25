@@ -3,6 +3,8 @@ import numpy as np
 from parameters import *
 import os
 import statsmodels.api as sm
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from pathos.multiprocessing import ProcessingPool as Pool
 from sklearn.neighbors import KNeighborsRegressor
