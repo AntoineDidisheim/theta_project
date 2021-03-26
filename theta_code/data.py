@@ -225,6 +225,7 @@ class Data:
         M = []
         P = []
         i = 25000
+        i = 2
         RF = self.load_rf()
         for i in range(t.shape[0]):
             id = t[['date', self.id_col]].iloc[i, :]
@@ -232,6 +233,7 @@ class Data:
             day = df.loc[ind, :]
 
             day=day.loc[day['delta'].abs()<=0.5,:]
+
 
             m, p = self.pre_process_day(day, pred_col, RF)
 
@@ -312,16 +314,16 @@ class Data:
         PRICE=BlackScholes_price(S,r,IV,K)
         #
         #
-        plt.plot(t['strike'], t['impl_volatility'])
-        plt.scatter(t['strike'], t['impl_volatility'])
-        plt.plot(K, IV)
-        plt.show()
-
+        # plt.plot(t['strike'], t['impl_volatility'])
+        # plt.scatter(t['strike'], t['impl_volatility'])
+        # plt.plot(K, IV)
+        # plt.show()
         #
-        plt.plot(t['strike'], t['opt_price'])
-        plt.scatter(t['strike'], t['opt_price'])
-        plt.plot(K, PRICE)
-        plt.show()
+        # #
+        # plt.plot(t['strike'], t['opt_price'])
+        # plt.scatter(t['strike'], t['opt_price'])
+        # plt.plot(K, PRICE)
+        # plt.show()
 
 
         t = day.loc[:, ['strike', 'impl_volatility']].copy().sort_values(['strike', 'impl_volatility']).reset_index(drop=True).groupby('strike').mean().reset_index()
