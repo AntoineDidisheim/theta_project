@@ -1,6 +1,7 @@
 
 import numpy as np
 import tensorflow as tf
+from parameters import Constant
 
 class Econ:
     ##################
@@ -38,11 +39,11 @@ class Econ:
     def g_apply_ret(m):
         # old version without numerical split
         # m = np.concatenate([K, PRICE, rf, s0])
-        K = m[:200]
-        PRICE = m[200:400]
-        rf = m[400]
-        S = m[401]
-        theta = m[402]
+        K = m[:Constant.GRID_SIZE]
+        PRICE = m[Constant.GRID_SIZE:(2*Constant.GRID_SIZE)]
+        rf = m[(2*Constant.GRID_SIZE)]
+        S = m[(2*Constant.GRID_SIZE)+1]
+        theta = m[(2*Constant.GRID_SIZE)+1]
 
         def trapezoidal_integral_approx(t, y):
             return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
@@ -61,11 +62,11 @@ class Econ:
     def g_apply_log(m):
         # old version without numerical split
         # m = np.concatenate([K, PRICE, rf, s0])
-        K = m[:200]
-        PRICE = m[200:400]
-        rf = m[400]
-        S = m[401]
-        theta = m[402]
+        K = m[:Constant.GRID_SIZE]
+        PRICE = m[Constant.GRID_SIZE:(2*Constant.GRID_SIZE)]
+        rf = m[(2*Constant.GRID_SIZE)]
+        S = m[(2*Constant.GRID_SIZE)+1]
+        theta = m[(2*Constant.GRID_SIZE)+2]
 
         def trapezoidal_integral_approx(t, y):
             return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')

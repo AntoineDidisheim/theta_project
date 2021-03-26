@@ -288,7 +288,7 @@ class Data:
         bound = (t['impl_volatility'].iloc[0], t['impl_volatility'].iloc[-1])
         cb = interp1d(t['strike'], t['impl_volatility'], bounds_error=False, fill_value=bound)
         if self.par.data.opt_smooth == OptSmooth.EXT:
-            K = np.linspace(s0 * 0.5, s0 * 1.5, 200)
+            K = np.linspace(s0 * 1/3, s0 * 3, Constant.GRID_SIZE)
         if self.par.data.opt_smooth == OptSmooth.INT:
             K = np.linspace(t['strike'].min(), t['strike'].max(), 200)
         assert len(K) == 200, 'Problem with the linespace'

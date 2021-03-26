@@ -15,6 +15,7 @@ import socket
 
 class Constant:
     MAX_OPT = 1000
+    GRID_SIZE = 1000
 
 
 ##################
