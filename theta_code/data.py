@@ -290,8 +290,8 @@ class Data:
         if self.par.data.opt_smooth == OptSmooth.EXT:
             K = np.linspace(s0 * 1/3, s0 * 3, Constant.GRID_SIZE)
         if self.par.data.opt_smooth == OptSmooth.INT:
-            K = np.linspace(t['strike'].min(), t['strike'].max(), 200)
-        assert len(K) == 200, 'Problem with the linespace'
+            K = np.linspace(t['strike'].min(), t['strike'].max(), Constant.GRID_SIZE)
+        assert len(K) == Constant.GRID_SIZE, 'Problem with the linespace'
 
 
         IV = cb(K)
@@ -328,7 +328,7 @@ class Data:
 
         t = day.loc[:, ['strike', 'impl_volatility']].copy().sort_values(['strike', 'impl_volatility']).reset_index(drop=True).groupby('strike').mean().reset_index()
         cb = CubicSpline(t['strike'], t['impl_volatility'])
-        # X = np.arange(t['strike'].min(), t['strike'].max(), (t['strike'].max() - t['strike'].min()) / 200)
+        # X = np.arange(t['strike'].min(), t['strike'].max(), (t['strike'].max() - t['strike'].min()) / Constant.GRID_SIZE)
         X = s0 * np.arange(0.8, 1.3, 0.1)
         IV = cb(X)
 
