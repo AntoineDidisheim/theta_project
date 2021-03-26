@@ -37,7 +37,7 @@ par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
 par.model.layers = [10]
 par.model.batch_size = 32
-# par.model.layers = [64,32,16]
+par.model.layers = [64,32,16]
 # par.model.batch_size = 256
 
 par.model.dropout = 0.0

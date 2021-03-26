@@ -224,12 +224,14 @@ class Data:
         t = df[['date', self.id_col, 'ret']].drop_duplicates().reset_index(drop=True)
         M = []
         P = []
-        i = 10000
+        i = 25000
         RF = self.load_rf()
         for i in range(t.shape[0]):
             id = t[['date', self.id_col]].iloc[i, :]
             ind = (df['date'] == id['date']) & (df[self.id_col] == id[self.id_col])
             day = df.loc[ind, :]
+
+            day=day.loc[day['delta'].abs()<=0.5,:]
 
             m, p = self.pre_process_day(day, pred_col, RF)
 
@@ -309,17 +311,17 @@ class Data:
 
         PRICE=BlackScholes_price(S,r,IV,K)
         #
-        # #
-        # plt.plot(t['strike'], t['impl_volatility'])
-        # plt.scatter(t['strike'], t['impl_volatility'])
-        # plt.plot(K, IV)
-        # plt.show()
         #
-        # #
-        # plt.plot(t['strike'], t['opt_price'])
-        # plt.scatter(t['strike'], t['opt_price'])
-        # plt.plot(K, PRICE)
-        # plt.show()
+        plt.plot(t['strike'], t['impl_volatility'])
+        plt.scatter(t['strike'], t['impl_volatility'])
+        plt.plot(K, IV)
+        plt.show()
+
+        #
+        plt.plot(t['strike'], t['opt_price'])
+        plt.scatter(t['strike'], t['opt_price'])
+        plt.plot(K, PRICE)
+        plt.show()
 
 
         t = day.loc[:, ['strike', 'impl_volatility']].copy().sort_values(['strike', 'impl_volatility']).reset_index(drop=True).groupby('strike').mean().reset_index()
@@ -1382,24 +1384,25 @@ class Data:
         # self.historical_theta(reload=True)
 
 #
-# par = Params()
-# par.name_detail = 'new_version'
-# par.model.tex_dir = 'new_version'
-# par.model.cv = CrossValidation.YEAR_BY_YEAR
-# par.model.activation = 'swish'
-# par.model.learning_rate = 1e-2
-# par.model.layers = [10]
-# par.model.batch_size = 32
-# par.model.dropout = 0.0
-# par.model.output_range = 1.2
-# # par.model.output_range = 5.0
-# par.model.E = 5
-# par.data.val_split = 0.1
-# par.model.loss = Loss.MAE
-# par.data.opt_smooth = OptSmooth.EXT
-# par.data.comp = True
-# par.data.ret = ReturnType.LOG
-# self = Data(par)
+par = Params()
+par.name_detail = 'new_version'
+par.model.tex_dir = 'new_version'
+par.model.cv = CrossValidation.YEAR_BY_YEAR
+par.model.activation = 'swish'
+par.model.learning_rate = 1e-2
+par.model.layers = [10]
+par.model.batch_size = 32
+par.model.dropout = 0.0
+par.model.output_range = 1.2
+# par.model.output_range = 5.0
+par.model.E = 5
+par.data.val_split = 0.1
+par.model.loss = Loss.MAE
+par.data.opt_smooth = OptSmooth.EXT
+par.data.comp = True
+par.data.ret = ReturnType.LOG
+self = Data(par)
+self.create_a_dataset()
 # # self.create_a_dataset()
 # self.pre_process_all()
 # # self.gen_all_int()

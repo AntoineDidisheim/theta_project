@@ -47,8 +47,8 @@ par.model.output_range = 1.2
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MSE
-par.data.opt_smooth = OptSmooth.INT
-par.data.min_opt_per_day = 15
+par.data.opt_smooth = OptSmooth.EXT
+par.data.min_opt_per_day = 10
 par.data.comp = True
 par.data.ret = ReturnType.LOG
 
@@ -59,14 +59,45 @@ par.print_values()
 
 data = Data(par)
 
-df = data.historical_theta()
-
-df=df.loc[~df['na'],:]
+df = data.load_opt()
 
 
-df['theta'].hist(bins=100)
-plt.show()
-df.dtypes
-df['theta'] = pd.to_numeric(df['theta'])
-df.groupby('date')['theta'].mean().rolling(4).mean().plot()
-plt.show()
+def BlackScholes_price(S, r, sigma, K):
+    dt = 28 / 365
+    Phi = stats.norm(loc=0, scale=1).cdf
+
+    d1 = (np.log(S / K) + (r + sigma ** 2 / 2) * dt) / (sigma * np.sqrt(dt))
+    d2 = d1 - sigma * np.sqrt(dt)
+
+    pr = S * Phi(d1) - K * np.exp(-r * dt) * Phi(d2)
+    pr_put = K * np.exp(-r * dt) * Phi(-d2) - S * Phi(-d1)
+    pr[S > K] = pr_put[S > K]
+    return pr
+
+
+df  =df[df['delta'].abs()<=0.5]
+df  =df.reset_index(drop=True)
+S = df['S']
+r = 0.01
+IV = df['impl_volatility']
+K = df['strike']
+PRICE = BlackScholes_price(S, r, IV, K)
+df['pred_pr'] =PRICE
+t=(df['o_ask']+df['o_bid'])/2
+df['mid_p'] = t
+tt=((t-PRICE).abs()/t)
+tt.describe(np.arange(0,1.05,0.05)).round(2)
+tt[df['delta'].abs()<=0.5].describe(np.arange(0,1.05,0.05)).round(2)
+temp=df.loc[tt>0.2,:]
+
+df = df[(df['delta'].abs()<=0.5)]
+
+df['impl_volatility'].max()
+(df.groupby(['gvkey','date'])['strike'].nunique()<10).mean()
+df.groupby(['gvkey','date'])['strike'].nunique().describe(np.arange(0,1.05,0.05)).round(2)
+
+
+# tt=tt[df['delta'].abs()<=1].describe(np.arange(0,1.05,0.05)).round(2)
+
+# temp=df[df['delta'].abs()<=1]
+# temp.loc[t == tt.max(),:]
