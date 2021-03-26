@@ -30,8 +30,8 @@ except:
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'back'
-par.model.tex_dir = 'back'
+par.name_detail = 'beta05_'
+par.model.tex_dir = 'beta05_'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
@@ -58,7 +58,9 @@ par.print_values()
 ##################
 # Create trainer
 ##################
-# Data(par).load_final()
+# df=Data(par)
+# df.load_final()
+
 try:
     Data(par).load_final()
 except:

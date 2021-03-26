@@ -237,6 +237,7 @@ class Data:
 
             m, p = self.pre_process_day(day, pred_col, RF)
 
+
             M.append(m)
             P.append(p)
             if i % 100 == 0:
@@ -309,9 +310,9 @@ class Data:
             return pr
 
         S = day['S'].iloc[0]
-        r=day['rf'].iloc[0]
 
-        PRICE=BlackScholes_price(S,r,IV,K)
+
+        PRICE=BlackScholes_price(S,rf,IV,K)
         #
         #
         # plt.plot(t['strike'], t['impl_volatility'])
@@ -1386,25 +1387,7 @@ class Data:
         # self.historical_theta(reload=True)
 
 #
-par = Params()
-par.name_detail = 'new_version'
-par.model.tex_dir = 'new_version'
-par.model.cv = CrossValidation.YEAR_BY_YEAR
-par.model.activation = 'swish'
-par.model.learning_rate = 1e-2
-par.model.layers = [10]
-par.model.batch_size = 32
-par.model.dropout = 0.0
-par.model.output_range = 1.2
-# par.model.output_range = 5.0
-par.model.E = 5
-par.data.val_split = 0.1
-par.model.loss = Loss.MAE
-par.data.opt_smooth = OptSmooth.EXT
-par.data.comp = True
-par.data.ret = ReturnType.LOG
-self = Data(par)
-self.create_a_dataset()
+
 # # self.create_a_dataset()
 # self.pre_process_all()
 # # self.gen_all_int()
