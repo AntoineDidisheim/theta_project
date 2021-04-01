@@ -20,4 +20,7 @@ par.data.opt_smooth = OptSmooth.EXT
 par.data.comp = True
 par.data.ret = ReturnType.LOG
 self = Data(par)
-self.create_a_dataset()
+# self.create_a_dataset
+# ()
+r = self.create_good_iv()
+pd.Series(r).to_pickle('temp.p')

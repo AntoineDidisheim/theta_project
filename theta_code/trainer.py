@@ -104,6 +104,7 @@ class Trainer:
                                    rf"\item {L}" + '\n' \
                                    rf"\item Loss {self.par.model.loss.name}" + '\n' \
                                    rf"\item Output range {self.par.model.output_range}" + '\n' \
+                                   rf"\item Output min value {self.par.model.out_min}" + '\n' \
                                    rf"\item Batch size {self.par.model.batch_size}" + '\n' \
                                    rf"\item Option input {self.par.data.opt}" + '\n' \
                                    rf"\item Compustat input {self.par.data.comp}" + '\n' \

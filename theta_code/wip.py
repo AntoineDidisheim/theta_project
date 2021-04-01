@@ -10,28 +10,14 @@ import time
 import sys
 import didipack as didi
 
-print('#####################################')
-print('list', sys.argv)
-print('#####################################')
-
-try:
-    grid_id = int(sys.argv[1])
-except:
-    print('Debug mode on local machine')
-    grid_id = 0
-
-##################
-# Define grid to run
-##################
-
 
 ##################
 
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'back'
-par.model.tex_dir = 'back'
+par.name_detail = 'beta05_'
+par.model.tex_dir = 'beta05_'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
@@ -42,8 +28,9 @@ par.model.batch_size = 32
 
 par.model.dropout = 0.0
 # par.model.dropout = 0.4
-par.model.output_range = 1.2
-# par.model.output_range = 5.0
+# par.model.output_range = 1.2
+par.model.output_range = 5.0
+par.model.out_min = -5.0
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MSE
@@ -56,11 +43,13 @@ par.data.ret = ReturnType.LOG
 par.update_model_name()
 par.print_values()
 
-
-data = Data(par)
-
-df = data.load_opt()
-
+df = Data(par).load_opt()
+rf=Data(par).load_rf()
+rf.columns=['date','rf']
+df=df.merge(rf)
+##################
+# main
+##################
 
 def BlackScholes_price(S, r, sigma, K):
     dt = 28 / 365
@@ -73,31 +62,13 @@ def BlackScholes_price(S, r, sigma, K):
     pr_put = K * np.exp(-r * dt) * Phi(-d2) - S * Phi(-d1)
     pr[S > K] = pr_put[S > K]
     return pr
+df.head()
+df
+p=BlackScholes_price(df['S'],df['rf'],df['impl_volatility'],df['strike'])
+df['pr'] =p
+df['true_p'] = (df['o_ask']+df['o_bid'])/2
 
+df['err']=(df['pr']-df['true_p']).abs()/df['true_p']
+df=df.loc[df['delta'].abs()<=0.5,:]
 
-df  =df[df['delta'].abs()<=0.5]
-df  =df.reset_index(drop=True)
-S = df['S']
-r = 0.01
-IV = df['impl_volatility']
-K = df['strike']
-PRICE = BlackScholes_price(S, r, IV, K)
-df['pred_pr'] =PRICE
-t=(df['o_ask']+df['o_bid'])/2
-df['mid_p'] = t
-tt=((t-PRICE).abs()/t)
-tt.describe(np.arange(0,1.05,0.05)).round(2)
-tt[df['delta'].abs()<=0.5].describe(np.arange(0,1.05,0.05)).round(2)
-temp=df.loc[tt>0.2,:]
-
-df = df[(df['delta'].abs()<=0.5)]
-
-df['impl_volatility'].max()
-(df.groupby(['gvkey','date'])['strike'].nunique()<10).mean()
-df.groupby(['gvkey','date'])['strike'].nunique().describe(np.arange(0,1.05,0.05)).round(2)
-
-
-# tt=tt[df['delta'].abs()<=1].describe(np.arange(0,1.05,0.05)).round(2)
-
-# temp=df[df['delta'].abs()<=1]
-# temp.loc[t == tt.max(),:]
+df['err'].describe(np.arange(0,1.05,0.05)).round(2)

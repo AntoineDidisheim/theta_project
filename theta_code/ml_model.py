@@ -82,7 +82,7 @@ class NetworkTheta:
                 #
                 f = dense(f)
 
-        self.outputs = layers.Dense(1, activation="sigmoid", name='theta_forecast', dtype=tf.float64)(f)*self.par.model.output_range
+        self.outputs = layers.Dense(1, activation="sigmoid", name='theta_forecast', dtype=tf.float64)(f)*(self.par.model.output_range-self.par.model.out_min) + self.par.model.out_min
         self.outputs = tf.concat([other_inputs, self.outputs], axis=1)
         model = keras.Model(inputs=[theta_x, other_inputs], outputs=self.outputs)
 

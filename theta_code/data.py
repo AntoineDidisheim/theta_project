@@ -21,6 +21,7 @@ from Econ import Econ
 from scipy import optimize as opti
 import multiprocessing as mp
 from scipy import stats
+from pandarallel import pandarallel
 
 
 class RawData:
@@ -1352,6 +1353,69 @@ class Data:
     #
 
 
+    def create_good_iv(self):
+        df = self.load_opt()
+        ind = (df['impl_volatility']>0) & (df['delta'].abs()<0.5)
+        df = df.loc[ind,:]
+
+        rf = self.load_rf()
+        rf.columns = ['date','rf']
+        df=df.merge(rf)
+
+        def BlackScholes_price(sigma, S, r, K):
+            dt = 28/365
+            Phi = stats.norm(loc=0, scale=1).cdf
+
+            d1 = (np.log(S / K) + (r + sigma ** 2 / 2) * dt) / (sigma * np.sqrt(dt))
+            d2 = d1 - sigma * np.sqrt(dt)
+
+            pr = S * Phi(d1) - K * np.exp(-r * dt) * Phi(d2)
+            pr_put = K * np.exp(-r * dt) * Phi(-d2) - S * Phi(-d1)
+            pr[S>K] = pr_put[S>K]
+            return pr
+
+        p = BlackScholes_price(df['impl_volatility'], df['S'], df['rf'], df['strike'])
+        true_p=df['opt_price']
+
+        def BlackScholes_error(sigma, S, r, K,mid):
+            dt = 28/365
+            Phi = stats.norm(loc=0, scale=1).cdf
+
+            d1 = (np.log(S / K) + (r + sigma ** 2 / 2) * dt) / (sigma * np.sqrt(dt))
+            d2 = d1 - sigma * np.sqrt(dt)
+
+            pr = S * Phi(d1) - K * np.exp(-r * dt) * Phi(d2)
+            pr_put = K * np.exp(-r * dt) * Phi(-d2) - S * Phi(-d1)
+            pr[S>K] = pr_put[S>K]
+            return np.square(pr-mid)
+        def find(d):
+            x_init =d['impl_volatility']
+            S = d['S0']
+            r = d['rf']
+            K = d['strike']
+            pr = d['opt_price']
+            try:
+                res=opti.minimize(BlackScholes_error,x_init,args=(S,r,K,pr))
+                iv=res.x
+            except:
+                iv=np.nan
+            return iv[0]
+
+
+        # find(df.iloc[1,:])
+        # r = []
+        # for i in range(df.shape[0]):
+        #     r.append(find(df.iloc[i,:]))
+        #     if i%1000 == 0:
+        #         print(i, '/', df.shape[0])
+        pandarallel.initialize(progress_bar=True)
+        r= df.parallel_apply(find,axis=1)
+        return r
+
+
+
+
+
     def gen_delta(self):
         df = self.get_beta('monthly')
         df.to_pickle(self.par.data.dir + f'int_gen/beta_m.p')
@@ -1374,7 +1438,7 @@ class Data:
         self.load_all_price(reload=True)
         self.clean_opt_all()
         self.martin_wagner_var_mkt(reload=True)
-        self.marting_wagner_return(reload=True)
+        self.marting_wagner_return(re8load=True)
         print('start',flush=True)
 
         if self.par.data.crsp:

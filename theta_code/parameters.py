@@ -79,6 +79,7 @@ class ParamsModels:
         self.learning_rate = 0.01
         self.dropout = 0.01
         self.output_range = 1.0
+        self.out_min = 0.0
         self.cv = CrossValidation.YEAR_BY_YEAR
         self.tex_dir = 'tex_res'
         self.tex_name = 'theta'
@@ -131,8 +132,11 @@ class Params:
         n += 'BS' + str(self.model.batch_size)
         n += 'Act' + str(self.model.activation)
         n += 'OutRange' + str(self.model.output_range)
+        if self.model.out_min != 0.0:
+            n+='MinRange'+str(self.model.out_min)
         n += 'CV' + str(self.model.cv.name)
         n += 'Loss' + str(self.model.loss.name)
+
         n+='Ret'+str(self.data.ret.name)
         n+=f'd{self.data.min_opt_per_day}'
         if self.data.opt:
