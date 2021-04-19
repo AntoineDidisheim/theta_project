@@ -133,14 +133,24 @@ class Data:
         print(f'Set shuffle {self.shuffle_id}',flush=True)
 
     def load_final(self):
-        # finally save all
+        # finally load all all
         self.m_df = pd.read_pickle(self.par.data.dir + f'{self.name}/m_df.p').reset_index(drop=True)
         self.p_df = pd.read_pickle(self.par.data.dir + f'{self.name}/pred_df.p').reset_index(drop=True)
         self.label_df = pd.read_pickle(self.par.data.dir + f'{self.name}/label_df.p').reset_index(drop=True)
 
+        # add the transofrmed return
+        self.label_df['log_ret'] = self.label_df['ret']
+        self.label_df['normal_ret'] = np.exp(self.label_df['log_ret']) - 1
+
+        if self.par.data.ret == ReturnType.RET:
+            self.label_df['ret'] = self.label_df['normal_ret']
+        if self.par.data.ret == ReturnType.LOG:
+            self.label_df['ret'] = self.label_df['log_ret']
+
+
+
         if self.par.data.max_ret>-1:
             ind = (self.label_df['ret']>=self.par.data.min_ret) & (self.label_df['ret']<=self.par.data.max_ret)
-
             self.m_df = self.m_df.loc[ind,:].reset_index(drop=True)
             self.p_df = self.p_df.loc[ind,:].reset_index(drop=True)
             self.label_df = self.label_df.loc[ind,:].reset_index(drop=True)
@@ -150,8 +160,10 @@ class Data:
             t=self.label_df.merge(hist,how='left')['theta']
             self.p_df['theta_hist']=t
 
-        if self.par.data.ret == ReturnType.RET:
-            self.label_df['ret'] = np.exp(self.label_df['ret']) - 1
+
+
+
+
 
         # deal with remaining inf
         self.p_df = self.p_df.replace({-np.inf: np.nan, np.inf: np.nan})
@@ -227,6 +239,12 @@ class Data:
         P = []
         i = 25000
         i = 2
+
+        if 'rf_x' in df.columns:
+            df['rf'] = df['rf_x'].values
+            del df['rf_x']
+
+
         RF = self.load_rf()
         for i in range(t.shape[0]):
             id = t[['date', self.id_col]].iloc[i, :]
@@ -234,15 +252,30 @@ class Data:
             day = df.loc[ind, :]
 
             day=day.loc[day['delta'].abs()<=0.5,:]
-
-
             m, p = self.pre_process_day(day, pred_col, RF)
-
 
             M.append(m)
             P.append(p)
             if i % 100 == 0:
                 print(i, '/', t.shape[0],flush=True)
+
+
+        # ### try apply
+        # def create_function(id):
+        #     # id = t[['date', self.id_col]].iloc[i, :]
+        #     ind = (df['date'] == id['date']) & (df[self.id_col] == id[self.id_col])
+        #     day = df.loc[ind, :]
+        #     day = day.loc[day['delta'].abs() <= 0.5, :]
+        #     m, p = self.pre_process_day(day, pred_col, RF)
+        #     return m, p
+        #
+        #
+        # pandarallel.initialize(progress_bar=True,nb_workers=20)
+        # r=t.a(lambda x: create_function(x),axis=1)
+        # M=r.apply(lambda x: x[0]).values.tolist()
+        # P=r.apply(lambda x: x[1]).values.tolist()
+
+        ### end apply
 
         iv_col = ['iv' + str(x) for x in np.arange(80, 130, 10)]
         if self.par.data.opt:
@@ -339,6 +372,7 @@ class Data:
         if self.par.data.opt_smooth == OptSmooth.INT:
             m = np.concatenate([K, PRICE, [rf], s0])
         p = day.loc[:, pred_col].iloc[0, :].values
+
         if self.par.data.opt:
             p = np.concatenate([p, IV])
 
@@ -1129,7 +1163,6 @@ class Data:
             except:
                 sp_var = self.martin_wagner_var_mkt(reload=True)
             df = self.load_opt()
-            rf = self.load_rf()
             pr = self.load_all_price()
             pr['mkt'] = pr['shares_outstanding'] * pr['S0']
             pr['y'] = np.exp(pr['ret']) - 1
@@ -1170,7 +1203,7 @@ class Data:
 
             print(r2(df))
             print(df.groupby('year').apply(r2),flush=True)
-            df
+
             df[['date', self.id_col, 'MW']].to_pickle(self.par.data.dir + f'{self.name}/int/MW.p')
 
         df = pd.read_pickle(self.par.data.dir + f'{self.name}/int/MW.p')
@@ -1182,10 +1215,7 @@ class Data:
             os.makedirs(temp_dir,exist_ok=True)
             self.load_final()
 
-            if self.par.data.ret == ReturnType.RET:
-                g_func = Econ.g_apply_ret
-            if self.par.data.ret == ReturnType.LOG:
-                g_func = Econ.g_apply_log
+
 
             label = self.label_df.copy()
             ind = label.sort_values([self.id_col, 'date']).index
@@ -1194,7 +1224,7 @@ class Data:
             label = label.loc[ind, :].reset_index(drop=True)
             res = []
             prb_i = []
-            # for i in range(label.shape[0]):
+            i = 1000
             def compute_theta_for_index_i(i):
                 d = label.iloc[i, 0]
                 g = label.iloc[i, 1]
@@ -1205,11 +1235,18 @@ class Data:
                         temp = m.loc[ind, :].copy()
                         temp['theta'] = 0.0
                         temp = temp.values
-                        y = label.loc[ind, 'ret'].copy()
-
+                        y = label.loc[ind, 'log_ret'].copy()
+                        y = np.mean(y)
                         def func(theta):
                             temp[:, -1] = theta
-                            r = np.apply_along_axis(g_func, axis=1, arr=temp)
+                            t = np.apply_along_axis(Econ.up_down_apply_log, axis=1, arr=temp)
+                            S=temp[:,-2]
+                            t[:,0] = t[:,0] / S**theta
+                            t[:,1] = t[:,1] / S**theta
+                            t=np.mean(t,0)
+                            r=t[0]/t[1]
+                            r=r - np.mean(np.log(S))
+
                             return np.mean(np.square(r - y))
 
                         b = opti.Bounds([0], [5.0])
@@ -1220,9 +1257,9 @@ class Data:
                             func(theta)
                             m_pred = m.iloc[i, :]
                             m_pred['theta'] = theta
-                            pred = g_func(m_pred.values)
+                            pred = Econ.g_apply_log(m_pred.values)
                             m_pred['theta'] = 1.0
-                            pred_0 = g_func(m_pred.values)
+                            pred_0 = Econ.g_apply_log(m_pred.values)
                         except:
                             pred = np.nan
                             theta = np.nan
@@ -1245,14 +1282,18 @@ class Data:
                     print(i, '/', label.shape[0],flush=True)
                 return i
 
-            p = Pool(80)
+            # p = Pool(80)
+
+
 
 
 
             todo=np.arange(label.shape[0]).tolist()
 
+            for i in todo:
+                compute_theta_for_index_i(i)
 
-            p.map(compute_theta_for_index_i,todo)
+            # p.map(compute_theta_for_index_i,todo)
 
 
             # merge and save
@@ -1374,8 +1415,7 @@ class Data:
             pr[S>K] = pr_put[S>K]
             return pr
 
-        p = BlackScholes_price(df['impl_volatility'], df['S'], df['rf'], df['strike'])
-        true_p=df['opt_price']
+
 
         def BlackScholes_error(sigma, S, r, K,mid):
             dt = 28/365
@@ -1402,15 +1442,18 @@ class Data:
             return iv[0]
 
 
-        # find(df.iloc[1,:])
-        # r = []
-        # for i in range(df.shape[0]):
-        #     r.append(find(df.iloc[i,:]))
-        #     if i%1000 == 0:
-        #         print(i, '/', df.shape[0])
         pandarallel.initialize(progress_bar=True)
         r= df.parallel_apply(find,axis=1)
-        return r
+        # r = pd.read_pickle('temp.p')
+        # r = r.values
+        # r.shape
+        df['impl_volatility'] =r
+        df.to_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
+
+        p=BlackScholes_price(df['impl_volatility'],df['S0'],df['rf'],df['strike'])
+        print('Error', (p-df['opt_price']).abs().mean())
+
+
 
 
 
@@ -1447,8 +1490,8 @@ class Data:
             else:
                 self.load_pred_crsp_only(reload=True)
 
+        self.historical_theta(reload=True)
         self.create_a_dataset()
-        # self.historical_theta(reload=True)
 
 #
 

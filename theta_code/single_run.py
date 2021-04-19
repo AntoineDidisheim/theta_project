@@ -30,18 +30,18 @@ except:
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'beta05_'
-par.model.tex_dir = 'beta05_'
+par.name_detail = 'hist_2_'
+par.model.tex_dir = 'hist_2_'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
-par.model.layers = [10]
-par.model.batch_size = 32
-# par.model.layers = [64,32,16]
-# par.model.batch_size = 256
-
+# par.model.layers = [10]
+# par.model.batch_size = 32
+# par.model.dropout = 0.0
+par.model.layers = [64,32,16]
+par.model.batch_size = 256
 par.model.dropout = 0.0
-# par.model.dropout = 0.4
+#
 # par.model.output_range = 1.2
 par.model.output_range = 5.0
 par.model.out_min = -5.0

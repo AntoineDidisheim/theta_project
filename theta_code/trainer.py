@@ -62,14 +62,18 @@ class Trainer:
                 model.data.set_year_test(i)
             if self.par.model.cv == CrossValidation.RANDOM:
                 model.data.move_shuffle()
-            r2, theta, p, mse = model.get_perf_oos()
+
+            # r2, theta, mse, p_log, p_norm
+            r2, theta, mse, p_log, p_norm = model.get_perf_oos()
             model.train()
-            r2_new, theta_new, p_new, mse_new = model.get_perf_oos()
+            r2_new, theta_new, mse_new, p_log_new, p_norm_new = model.get_perf_oos()
             p_bench, r2_bench, mse_bench = model.get_bench_perf()
 
             r = model.data.test_label_df.copy()
-            r['pred_no_train'] = p.numpy()
-            r['pred'] = p_new.numpy()
+            r['pred_no_train_log'] = p_log.numpy()
+            r['pred_no_train_norm'] = p_norm.numpy()
+            r['pred_log'] = p_log_new.numpy()
+            r['pred_norm'] = p_norm_new.numpy()
             r['bench'] = p_bench.numpy()
             r['theta'] = theta_new
             res.append(r)
@@ -117,15 +121,21 @@ class Trainer:
 
         df = pd.read_pickle(self.res_dir + 'df.p')
 
+        # for now the return are all normal in the perf report
+        ret_type_str = 'R'
+        df['pred'] = df['pred_norm']
+
+        # if self.par.data.ret == ReturnType.LOG:
+        #     ret_type_str = 'log(R)'
+        # else:
+        #     ret_type_str  ='R'
+
+
         df['error_bench'] = (df['ret'] - df['bench']).abs()
         df['error_pred'] = (df['ret'] - df['pred']).abs()
         df.describe(np.arange(0,1.05,0.05)).round(3)
 
 
-        if self.par.data.ret == ReturnType.LOG:
-            ret_type_str = 'log(R)'
-        else:
-            ret_type_str  ='R'
 
         ##################
         # multiple r2

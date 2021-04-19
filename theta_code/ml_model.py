@@ -29,12 +29,10 @@ class NetworkTheta:
 
     def get_pred(self, x):
         pred = self.model.predict(x)
-        if self.par.data.ret == ReturnType.LOG:
-            p = tf.map_fn(fn=Econ.g_apply_log, elems=pred)
-        if self.par.data.ret == ReturnType.RET:
-            p = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
+        p_log = tf.map_fn(fn=Econ.g_apply_log, elems=pred)
+        p_norm = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
 
-        return p
+        return p_log, p_norm
 
     def get_theta(self, x):
         pred = self.model.predict(x)
@@ -44,14 +42,38 @@ class NetworkTheta:
         X = [self.data.test_p_df.values, self.data.test_m_df.values]
         y = self.data.test_label_df[['ret']].values
         pred = self.model.predict(X)
+
+        p_log = tf.map_fn(fn=Econ.g_apply_log, elems=pred)
+        p_norm = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
         if self.par.data.ret == ReturnType.LOG:
-            p = tf.map_fn(fn=Econ.g_apply_log, elems=pred)
+            p = p_log
         if self.par.data.ret == ReturnType.RET:
-            p = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
+            p = p_norm
+        theta = pred[:, -1]
+        r2 = r2_score(y, p)
+        mse = np.mean((p - y) ** 2)
+        return r2, theta, mse, p_log, p_norm
+
+    def get_perf_oos_normal_ret(self):
+        X = [self.data.test_p_df.values, self.data.test_m_df.values]
+        y = self.data.test_label_df[['normal_ret']].values
+        pred = self.model.predict(X)
+        p = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
         theta = pred[:, -1]
         r2 = r2_score(y, p)
         mse = np.mean((p - y) ** 2)
         return r2, theta, p, mse
+
+    def get_perf_oos_log_ret(self):
+        X = [self.data.test_p_df.values, self.data.test_m_df.values]
+        y = self.data.test_label_df[['log_ret']].values
+        pred = self.model.predict(X)
+        p = tf.map_fn(fn=Econ.g_apply_log, elems=pred)
+        theta = pred[:, -1]
+        r2 = r2_score(y, p)
+        mse = np.mean((p - y) ** 2)
+        return r2, theta, p, mse
+
 
     def get_bench_perf(self):
         m = self.data.test_m_df.copy()
@@ -139,8 +161,6 @@ class NetworkTheta:
     def custom_loss_mse_log(y_true, y_pred):
         p = tf.map_fn(fn=Econ.g_apply_log, elems=y_pred)
         return tf.reduce_mean(tf.losses.MSE(y_true, p))
-
-
 
     @staticmethod
     def custom_loss_mae_ret(y_true, y_pred):

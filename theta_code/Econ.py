@@ -43,7 +43,9 @@ class Econ:
         PRICE = m[Constant.GRID_SIZE:(2*Constant.GRID_SIZE)]
         rf = m[(2*Constant.GRID_SIZE)]
         S = m[(2*Constant.GRID_SIZE)+1]
-        theta = m[(2*Constant.GRID_SIZE)+1]
+        theta = m[(2*Constant.GRID_SIZE)+2]
+
+
 
         def trapezoidal_integral_approx(t, y):
             return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
@@ -78,3 +80,23 @@ class Econ:
         down = Econ.phi2(S, theta) + Econ.dPhi2(S, theta) * S * rf + int_phi2
         res = (up / down) - tf.math.log(S)
         return res
+
+    @staticmethod
+    def up_down_apply_log(m):
+        # old version without numerical split
+        # m = np.concatenate([K, PRICE, rf, s0])
+        K = m[:Constant.GRID_SIZE]
+        PRICE = m[Constant.GRID_SIZE:(2 * Constant.GRID_SIZE)]
+        rf = m[(2 * Constant.GRID_SIZE)]
+        S = m[(2 * Constant.GRID_SIZE) + 1]
+        theta = m[(2 * Constant.GRID_SIZE) + 2]
+
+        def trapezoidal_integral_approx(t, y):
+            return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
+
+        int_phi1 = trapezoidal_integral_approx(K, Econ.ddPhi1(K, theta) * PRICE) / (1 + rf)
+        int_phi2 = trapezoidal_integral_approx(K, Econ.ddPhi2(K, theta) * PRICE) / (1 + rf)
+
+        up = Econ.phi1(S, theta) + Econ.dPhi1(S, theta) * S * rf + int_phi1
+        down = Econ.phi2(S, theta) + Econ.dPhi2(S, theta) * S * rf + int_phi2
+        return up, down, tf.math.log(S)

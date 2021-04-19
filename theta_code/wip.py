@@ -63,7 +63,7 @@ def BlackScholes_price(S, r, sigma, K):
     pr[S > K] = pr_put[S > K]
     return pr
 df.head()
-df
+
 p=BlackScholes_price(df['S'],df['rf'],df['impl_volatility'],df['strike'])
 df['pr'] =p
 df['true_p'] = (df['o_ask']+df['o_bid'])/2
@@ -71,4 +71,6 @@ df['true_p'] = (df['o_ask']+df['o_bid'])/2
 df['err']=(df['pr']-df['true_p']).abs()/df['true_p']
 df=df.loc[df['delta'].abs()<=0.5,:]
 
-df['err'].describe(np.arange(0,1.05,0.05)).round(2)
+t=df[df['err']==1.0]
+
+print(df['err'].describe(np.arange(0,1.01,0.01)).round(2))
