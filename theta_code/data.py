@@ -1490,7 +1490,7 @@ class Data:
             else:
                 self.load_pred_crsp_only(reload=True)
 
-        self.historical_theta(reload=True)
+        # self.historical_theta(reload=True)
         self.create_a_dataset()
 
 #

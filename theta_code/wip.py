@@ -1,76 +1,51 @@
-import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
-from parameters import *
 from data import *
-from trainer import Trainer
-from ml_model import NetworkTheta
-import time
-import sys
-import didipack as didi
+from parameters import  *
 
 
-##################
-
-# Set parameters
-##################
 par = Params()
-par.name_detail = 'beta05_'
-par.model.tex_dir = 'beta05_'
+par.name_detail = 'new_version'
+par.model.tex_dir = 'new_version'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
 par.model.layers = [10]
 par.model.batch_size = 32
-# par.model.layers = [64,32,16]
-# par.model.batch_size = 256
-
 par.model.dropout = 0.0
-# par.model.dropout = 0.4
-# par.model.output_range = 1.2
-par.model.output_range = 5.0
-par.model.out_min = -5.0
+par.model.output_range = 1.2
+# par.model.output_range = 5.0
 par.model.E = 5
 par.data.val_split = 0.1
-par.model.loss = Loss.MSE
+par.model.loss = Loss.MAE
 par.data.opt_smooth = OptSmooth.EXT
-par.data.min_opt_per_day = 10
 par.data.comp = True
-par.data.ret = ReturnType.LOG
+par.data.ret = ReturnType.RET
+data = Data(par)
 
+mw =data.marting_wagner_return()
+pr=data.load_all_price()[['permno','gvkey']]
+pr['permno'] = pr['permno'].astype(int)
+pr = pr.drop_duplicates()
+mw=mw.merge(pr,how='left')
 
-par.update_model_name()
-par.print_values()
+them = pd.read_csv('data/MartinWagnerBounds.csv').rename(columns={'id':'permno'})
+them['date'] = pd.to_datetime(them['date'])
+them['permno'] = them['permno'].astype(int)
 
-df = Data(par).load_opt()
-rf=Data(par).load_rf()
-rf.columns=['date','rf']
-df=df.merge(rf)
-##################
-# main
-##################
+mw=mw.merge(them,how='left')
+pd.isna(mw['mw30']).mean()
+them = them.merge(mw[['date','permno','MW']], how='left')
+ind = them['date'].isin(mw['date'].unique())
+ind.mean()
+pd.isna(them.loc[ind,'MW']).mean()
+pd.isna(mw['mw30']).mean()
 
-def BlackScholes_price(S, r, sigma, K):
-    dt = 28 / 365
-    Phi = stats.norm(loc=0, scale=1).cdf
+mw['mw_yearly']=(1+mw['MW'])**(252/20)-1
+mw['mw_yearly']=(mw['MW'])*252/20
 
-    d1 = (np.log(S / K) + (r + sigma ** 2 / 2) * dt) / (sigma * np.sqrt(dt))
-    d2 = d1 - sigma * np.sqrt(dt)
-
-    pr = S * Phi(d1) - K * np.exp(-r * dt) * Phi(d2)
-    pr_put = K * np.exp(-r * dt) * Phi(-d2) - S * Phi(-d1)
-    pr[S > K] = pr_put[S > K]
-    return pr
-df.head()
-
-p=BlackScholes_price(df['S'],df['rf'],df['impl_volatility'],df['strike'])
-df['pr'] =p
-df['true_p'] = (df['o_ask']+df['o_bid'])/2
-
-df['err']=(df['pr']-df['true_p']).abs()/df['true_p']
-df=df.loc[df['delta'].abs()<=0.5,:]
-
-t=df[df['err']==1.0]
-
-print(df['err'].describe(np.arange(0,1.01,0.01)).round(2))
+y=np.linspace(0,mw['mw30'].max(),100)
+x=np.linspace(0,mw['mw_yearly'].max(),100)
+plt.scatter(mw['mw_yearly'],mw['mw30'],color='k',marker='+',alpha=0.8)
+plt.xlim(0,2.0)
+plt.ylim(0,2.0)
+plt.plot(x,x,color='r')
+plt.show()

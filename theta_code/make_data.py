@@ -19,8 +19,11 @@ par.model.loss = Loss.MAE
 par.data.opt_smooth = OptSmooth.EXT
 par.data.comp = True
 par.data.ret = ReturnType.RET
+par.data.min_opt_per_day = 3
+par.update_model_name()
+
 self = Data(par)
-self.create_a_dataset()
+self.pre_process_all()
 
 # self.create_a_dataset()
 # ()

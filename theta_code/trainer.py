@@ -141,8 +141,24 @@ class Trainer:
         # multiple r2
         ##################
         ## add marting wagner
-        t=Data(self.par).marting_wagner_return()
+        # t=Data(self.par).marting_wagner_return()
+
+        mw = Data(self.par).marting_wagner_return()
+        pr = Data(self.par).load_all_price()[['permno', 'gvkey']]
+        pr['permno'] = pr['permno'].astype(int)
+        pr = pr.drop_duplicates()
+        mw = mw.merge(pr, how='left')
+
+        them = pd.read_csv('data/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
+        them['date'] = pd.to_datetime(them['date'])
+        them['permno'] = them['permno'].astype(int)
+        mw = mw.merge(them, how='left')
+        t=mw[['date','gvkey','MW','mw30']]
         df = df.merge(t, how='left')
+        df['mw30'] = df['mw30']/12
+        df['mw30'] = df['mw30']*20/30
+
+
         t=Data(self.par).historical_theta()
         df = df.merge(t[['date','gvkey','pred']].rename(columns={'pred':'hist_theta'}), how='left')
         t = Data(self.par).load_all_price(False)
@@ -173,6 +189,7 @@ class Trainer:
             r=[
                 r2(df,(1.06)**(1/12)-1,r'6\% premium'),
                 r2(df,df['MW'],'Martin Wagner'),
+                r2(df,df['mw30'],'Martin Wagner downloaded'),
                 r2(df,0.0, r'$R=0.0$'),
                 r2(df, df['hist_theta'],r'historical $\theta$'),
                 r2(df, df['bench'],r'$\theta=1.0$'),
@@ -196,7 +213,7 @@ class Trainer:
         t['nb. obs'] = tt.values
         t = t.T
         t.loc['nb. obs',:]
-
+        t
 
         t.to_latex(self.dir_tables+'all_r2.tex', escape=False)
         self.paper.append_table_to_sec(table_name='all_r2.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
