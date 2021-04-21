@@ -20,6 +20,7 @@ par.data.opt_smooth = OptSmooth.EXT
 par.data.comp = True
 par.data.ret = ReturnType.RET
 par.data.min_opt_per_day = 3
+par.data.mw =False
 par.update_model_name()
 
 self = Data(par)
