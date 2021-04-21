@@ -1478,10 +1478,10 @@ class Data:
 
     def pre_process_all(self):
         # # pre-process option
-        self.load_all_price(reload=True)
-        self.clean_opt_all()
-        self.martin_wagner_var_mkt(reload=True)
-        self.marting_wagner_return(re8load=True)
+        # self.load_all_price(reload=True)
+        # self.clean_opt_all()
+        # self.martin_wagner_var_mkt(reload=True)
+        self.marting_wagner_return(reload=True)
         print('start',flush=True)
 
         if self.par.data.crsp:
