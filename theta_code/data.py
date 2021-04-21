@@ -246,16 +246,22 @@ class Data:
 
 
         RF = self.load_rf()
-        for i in range(t.shape[0]):
+        for i in range(1500,t.shape[0]):
+        # for i in range(t.shape[0]):
             id = t[['date', self.id_col]].iloc[i, :]
             ind = (df['date'] == id['date']) & (df[self.id_col] == id[self.id_col])
             day = df.loc[ind, :]
-
+            day['delta']
             day=day.loc[day['delta'].abs()<=0.5,:]
-            m, p = self.pre_process_day(day, pred_col, RF)
 
-            M.append(m)
-            P.append(p)
+            if day.loc[:, ['strike', 'opt_price', 'impl_volatility']].drop_duplicates().shape[0]>1:
+                m, p = self.pre_process_day(day, pred_col, RF)
+
+                M.append(m)
+                P.append(p)
+            else:
+                print(f'### Skip {i}, not enough points')
+
             if i % 100 == 0:
                 print(i, '/', t.shape[0],flush=True)
 

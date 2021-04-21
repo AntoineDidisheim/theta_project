@@ -74,4 +74,4 @@ trainer = Trainer(par)
 self = trainer
 # trainer.create_paper()
 # trainer.cv_training()
-trainer.create_report_sec()
+# trainer.create_report_sec()
