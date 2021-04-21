@@ -246,8 +246,7 @@ class Data:
 
 
         RF = self.load_rf()
-        for i in range(1500,t.shape[0]):
-        # for i in range(t.shape[0]):
+        for i in range(t.shape[0]):
             id = t[['date', self.id_col]].iloc[i, :]
             ind = (df['date'] == id['date']) & (df[self.id_col] == id[self.id_col])
             day = df.loc[ind, :]
