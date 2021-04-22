@@ -51,7 +51,7 @@ par.model.loss = Loss.MSE
 par.data.opt_smooth = OptSmooth.EXT
 par.data.min_opt_per_day = 10
 par.data.comp = True
-par.data.ret = ReturnType.LOG
+par.data.ret = ReturnType.RET
 
 
 par.update_model_name()
