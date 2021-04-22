@@ -99,7 +99,7 @@ class DataParams:
         self.crsp = True
         self.comp =False
         self.opt = True
-        self.mw = True
+        self.mw = False
         self.hist_theta = True
         self.last_friday = False
         self.min_opt_per_day = 10
