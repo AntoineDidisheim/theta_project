@@ -170,17 +170,17 @@ class Trainer:
         df['glb3_D30'] = df['glb3_D30'] / 12
         df['glb3_D30'] = df['glb3_D30'] *20/30
 
-        plt.scatter(df['pred'],df['glb3_D30'],color='k',marker='+')
-        plt.xlabel('Our estimation')
-        plt.ylabel('glb3 D30')
-        plt.grid()
-        plt.show()
-
-        plt.scatter(df['bench'],df['glb3_D30'],color='k',marker='+')
-        plt.xlabel(r'$\theta = 1.0$')
-        plt.ylabel('glb3 D30')
-        plt.grid()
-        plt.show()
+        # plt.scatter(df['pred'],df['glb3_D30'],color='k',marker='+')
+        # plt.xlabel('Our estimation')
+        # plt.ylabel('glb3 D30')
+        # plt.grid()
+        # plt.show()
+        #
+        # plt.scatter(df['bench'],df['glb3_D30'],color='k',marker='+')
+        # plt.xlabel(r'$\theta = 1.0$')
+        # plt.ylabel('glb3 D30')
+        # plt.grid()
+        # plt.show()
 
 
         df['month'] = df['date'].dt.year*100+df['date'].dt.month
@@ -193,17 +193,17 @@ class Trainer:
         df['month'].unique()
 
 
-        plt.scatter(df.loc[ind,'glb3_D30'],df.loc[ind,'ret'],color='k',marker='+')
-        plt.xlabel('glb3 D30')
-        plt.ylabel(r'true return')
-        plt.grid()
-        plt.show()
-
-        plt.scatter(df.loc[ind,'pred'], df.loc[ind,'ret'], color='k', marker='+')
-        plt.xlabel('Our estimation')
-        plt.ylabel(r'true return')
-        plt.grid()
-        plt.show()
+        # plt.scatter(df.loc[ind,'glb3_D30'],df.loc[ind,'ret'],color='k',marker='+')
+        # plt.xlabel('glb3 D30')
+        # plt.ylabel(r'true return')
+        # plt.grid()
+        # plt.show()
+        #
+        # plt.scatter(df.loc[ind,'pred'], df.loc[ind,'ret'], color='k', marker='+')
+        # plt.xlabel('Our estimation')
+        # plt.ylabel(r'true return')
+        # plt.grid()
+        # plt.show()
 
 
 
@@ -492,7 +492,6 @@ class Trainer:
         plt.xlabel('Quantile')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'quantile_portfolio.png')
-        plt.show()
         self.plt_show()
 
         Q_LIST = np.arange(0,1.1,0.1)
