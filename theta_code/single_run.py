@@ -30,10 +30,10 @@ except:
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'big_sample_1_'
-par.model.tex_dir = 'big_sample_1_'
+par.name_detail = 'no_cut'
+par.model.tex_dir = 'no_cut'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
-par.model.activation = 'swish'
+par.model.activation = 'relu'
 par.model.learning_rate = 1e-2
 par.model.layers = [10]
 par.model.batch_size = 32
@@ -49,7 +49,7 @@ par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MSE
 par.data.opt_smooth = OptSmooth.EXT
-par.data.min_opt_per_day = 10
+par.data.min_opt_per_day = 3
 par.data.comp = True
 par.data.ret = ReturnType.RET
 
@@ -72,6 +72,6 @@ par.print_values()
 trainer = Trainer(par)
 
 self = trainer
-trainer.create_paper()
-trainer.cv_training()
+# trainer.create_paper()
+# trainer.cv_training()
 trainer.create_report_sec()

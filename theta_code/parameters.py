@@ -104,8 +104,10 @@ class DataParams:
         self.last_friday = False
         self.min_opt_per_day = 10
 
-        self.max_ret = 0.2
-        self.min_ret = -0.2
+        # self.max_ret = 0.2
+        # self.min_ret = -0.2
+        self.max_ret = 200000
+        self.min_ret = -200000
 
         self.ret = ReturnType.LOG
 

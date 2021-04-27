@@ -13,6 +13,7 @@ par.model.batch_size = 32
 par.model.dropout = 0.0
 par.model.output_range = 1.2
 # par.model.output_range = 5.0
+par.data.min_opt_per_day = 3
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MAE
@@ -34,8 +35,9 @@ them['permno'] = them['permno'].astype(int)
 mw=mw.merge(them,how='left')
 pd.isna(mw['mw30']).mean()
 them = them.merge(mw[['date','permno','MW']], how='left')
-ind = them['date'].isin(mw['date'].unique())
+ind = them['date'].isin(mw['date'].unique()) & them['permno'].isin(mw['permno'].unique())
 ind.mean()
+them.loc[ind,:]
 pd.isna(them.loc[ind,'MW']).mean()
 pd.isna(mw['mw30']).mean()
 

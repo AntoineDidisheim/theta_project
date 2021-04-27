@@ -103,18 +103,18 @@ class Trainer:
         L = L[:-1] + ')'
         model_description = '\n' + "In this section we present the results where the neural network architecture is defined as, \n \n" \
                                    r"\begin{enumerate}" + '\n' \
-                                   rf"\item Learning rate {self.par.model.learning_rate}" + '\n' \
-                                   rf"\item Optimizer {self.par.model.opti}" + '\n' \
-                                   rf"\item {L}" + '\n' \
-                                   rf"\item Loss {self.par.model.loss.name}" + '\n' \
-                                   rf"\item Output range {self.par.model.output_range}" + '\n' \
-                                   rf"\item Output min value {self.par.model.out_min}" + '\n' \
-                                   rf"\item Batch size {self.par.model.batch_size}" + '\n' \
-                                   rf"\item Option input {self.par.data.opt}" + '\n' \
-                                   rf"\item Compustat input {self.par.data.comp}" + '\n' \
-                                   rf"\item CRSP input {self.par.data.crsp}" + '\n' \
-                                   rf"\item ret max: {self.par.data.max_ret}, min {self.par.data.min_ret}" + '\n' \
-                                    r"\end{enumerate}" + '\n'
+                                                          rf"\item Learning rate {self.par.model.learning_rate}" + '\n' \
+                                                                                                                   rf"\item Optimizer {self.par.model.opti}" + '\n' \
+                                                                                                                                                               rf"\item {L}" + '\n' \
+                                                                                                                                                                               rf"\item Loss {self.par.model.loss.name}" + '\n' \
+                                                                                                                                                                                                                           rf"\item Output range {self.par.model.output_range}" + '\n' \
+                                                                                                                                                                                                                                                                                  rf"\item Output min value {self.par.model.out_min}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                        rf"\item Batch size {self.par.model.batch_size}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                           rf"\item Option input {self.par.data.opt}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                                                                        rf"\item Compustat input {self.par.data.comp}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         rf"\item CRSP input {self.par.data.crsp}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     rf"\item ret max: {self.par.data.max_ret}, min {self.par.data.min_ret}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               r"\end{enumerate}" + '\n'
 
 
         self.paper.append_text_to_sec(sec_name=par.name, text=model_description.replace('_', ' '))
@@ -148,7 +148,7 @@ class Trainer:
         pr['permno'] = pr['permno'].astype(int)
         pr = pr.drop_duplicates()
         mw = mw.merge(pr, how='left')
-
+        # their MW
         them = pd.read_csv('data/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
         them['date'] = pd.to_datetime(them['date'])
         them['permno'] = them['permno'].astype(int)
@@ -157,30 +157,103 @@ class Trainer:
         df = df.merge(t, how='left')
         df['mw30'] = df['mw30']/12
         df['mw30'] = df['mw30']*20/30
+        # their lower bound
+        them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
+
+        them['date'] = pd.to_datetime(them['date'])
+        them['permno'] = them['permno'].astype(int)
+        them = them.merge(pr)
+
+        t=them[['date','gvkey','glb2_D30','glb3_D30']]
+        df = df.merge(t, how='left')
+        df['glb2_D30'] = df['glb2_D30'] / 12
+        df['glb3_D30'] = df['glb3_D30'] / 12
+        df['glb3_D30'] = df['glb3_D30'] *20/30
+
+        plt.scatter(df['pred'],df['glb3_D30'],color='k',marker='+')
+        plt.xlabel('Our estimation')
+        plt.ylabel('glb3 D30')
+        plt.grid()
+        plt.show()
+
+        plt.scatter(df['bench'],df['glb3_D30'],color='k',marker='+')
+        plt.xlabel(r'$\theta = 1.0$')
+        plt.ylabel('glb3 D30')
+        plt.grid()
+        plt.show()
 
 
-        t=Data(self.par).historical_theta()
-        df = df.merge(t[['date','gvkey','pred']].rename(columns={'pred':'hist_theta'}), how='left')
-        t = Data(self.par).load_all_price(False)
-        t['year'] = t['date'].dt.year
-        df['year'] =  df['date'].dt.year
-        t=t.groupby('year')['ret'].mean().reset_index()
-        t[r'$\bar{MKT}_{t-1}$']=t['ret'].shift()
-        t = t.rename(columns={'ret':r'$\bar{MKT}_{t}$'})
-        overall_average =  Data(self.par).load_all_price()['ret'].mean()
-        df=df.merge(t)
+        df['month'] = df['date'].dt.year*100+df['date'].dt.month
+        ind=df['month'] == 200805
+        ind=df['month'] == 200805
+        ind=df['gvkey'] ==114628
 
-        t = Data(self.par)
-        t.load_final()
-        t.label_df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = (t.p_df['beta_monthly']*t.p_df['mkt-rf'])/100
-        df=df.merge(t.label_df)
+        df.columns
+
+        df['month'].unique()
+
+
+        plt.scatter(df.loc[ind,'glb3_D30'],df.loc[ind,'ret'],color='k',marker='+')
+        plt.xlabel('glb3 D30')
+        plt.ylabel(r'true return')
+        plt.grid()
+        plt.show()
+
+        plt.scatter(df.loc[ind,'pred'], df.loc[ind,'ret'], color='k', marker='+')
+        plt.xlabel('Our estimation')
+        plt.ylabel(r'true return')
+        plt.grid()
+        plt.show()
+
+
+
+        # df['mw30'] = df['mw30']/12
+        # df['mw30'] = df['mw30']*20/30
+
+
+
+        # end lower bound
+
+        try:
+            t=Data(self.par).historical_theta()
+            df = df.merge(t[['date','gvkey','pred']].rename(columns={'pred':'hist_theta'}), how='left')
+            t = Data(self.par).load_all_price(False)
+            t['year'] = t['date'].dt.year
+            df['year'] =  df['date'].dt.year
+            t=t.groupby('year')['ret'].mean().reset_index()
+            t[r'$\bar{MKT}_{t-1}$']=t['ret'].shift()
+            t = t.rename(columns={'ret':r'$\bar{MKT}_{t}$'})
+            overall_average =  Data(self.par).load_all_price()['ret'].mean()
+            df=df.merge(t)
+        except:
+            df[r'$\bar{MKT}_{t-1}$'] = np.nan
+
+        try:
+            t = Data(self.par)
+            t.load_final()
+            t.label_df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = (t.p_df['beta_monthly']*t.p_df['mkt-rf'])/100
+            df=df.merge(t.label_df)
+        except:
+            df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = np.nan
 
         def r2(df_,y_bar, name='NNET'):
-            if np.sum(pd.isna(y_bar))>0:
-                df_ = df_.loc[~pd.isna(y_bar),:]
+            try:
+                if np.sum(pd.isna(y_bar))>0:
+                    df_ = df_.loc[~pd.isna(y_bar),:]
 
-            r2_pred = 1 - ((df_['ret'] - df_['pred']) ** 2).sum() / ((df_['ret'] - y_bar) ** 2).sum()
-            return (pd.Series({name: r2_pred})*100).round(2)
+                r2_pred = 1 - ((df_['ret'] - df_['pred']) ** 2).sum() / ((df_['ret'] - y_bar) ** 2).sum()
+                r = (pd.Series({name: r2_pred})*100).round(2)
+            except:
+                r = np.nan
+
+            return r
+        #
+        # temp = df.copy()
+        # temp = temp.loc[~pd.isna(df['mw30']), :]
+        # 1 - ((temp['ret'] - temp['glb3_D30']) ** 2).sum() / ((temp['ret'] - temp['mw30']) ** 2).sum()
+        #
+
+
 
         df.describe(np.arange(0,1.05,0.05))
         ind = (df['ret']>=-0.5) & (df['ret']<=0.5)
@@ -196,8 +269,9 @@ class Trainer:
                 r2(df, df[r'$\bar{MKT}_{t}$'],r'$\bar{MKT}_{t}$'),
                 r2(df, df[r'$\bar{MKT}_{t-1}$'],r'$\bar{MKT}_{t-1}$'),
                 r2(df, overall_average,r'$\bar{MKT}$'),
-                r2(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$')
-
+                r2(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
+                r2(df, df[r'glb2_D30'],r'Vilkny glb2 D30'),
+                r2(df, df[r'glb3_D30'],r'Vilkny glb3 D30')
             ]
             return pd.concat(r).sort_values()
 
@@ -387,28 +461,27 @@ class Trainer:
         ##################
         # make quantile plots
         ##################
-        Q_LIST = np.arange(0, 1.1, 0.1)
-        q_pred = []
-        q_bench = []
-        for d in df['date'].sort_values().unique():
-            t = df.loc[df['date'] == d, :].copy()
-            t['q'] = pd.qcut(t['pred'], Q_LIST, labels=False, duplicates='drop')
-            t = t.groupby('q')['ret'].mean()
-            t.name = d
-            q_pred.append(t)
 
-            t = df.loc[df['date'] == d, :].copy()
-            t['q'] = pd.qcut(t['bench'], Q_LIST, labels=False, duplicates='drop')
-            t = t.groupby('q')['ret'].mean()
-            t.name = d
-            q_bench.append(t)
-        q_pred = pd.DataFrame(q_pred)
-        q_bench = pd.DataFrame(q_bench)
 
-        b = q_bench.mean()
+        def func(x):
+            return pd.qcut(x, 5, labels=False, duplicates='drop').values
+        def av_geom(x):
+            return (np.prod(1+x)**(1/x.shape[0])) -1
+
+
+        df['port']=df.groupby('date')['pred'].transform(func)
+        t=df.groupby(['port','date'])['ret'].mean().reset_index()
+        p=t.groupby('port')['ret'].apply(av_geom)
+
+
+        df['port']=df.groupby('date')['glb3_D30'].transform(func)
+        t=df.groupby(['port','date'])['ret'].mean().reset_index()
+        b=t.groupby('port')['ret'].apply(av_geom)
+
+
+
         b.name = r'$\theta=1.0$'
-        p = q_pred.mean()
-        p.name = r'$\theta=\phi(X)$'
+        p.name = r'$Vilknoy$'
         q_final = pd.DataFrame([b, p]).T
         q_final.index += 1
         plt.plot(q_final.index, q_final.iloc[:, 0], label=q_final.columns[0], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0])
@@ -419,8 +492,10 @@ class Trainer:
         plt.xlabel('Quantile')
         plt.tight_layout()
         plt.savefig(self.dir_figs + 'quantile_portfolio.png')
+        plt.show()
         self.plt_show()
 
+        Q_LIST = np.arange(0,1.1,0.1)
         df['q_pred'] = pd.qcut(df['pred'], Q_LIST, labels=False, duplicates='drop')
         t = df.groupby('q_pred')['ret'].mean()
         t_q = df.groupby('q_pred')['pred'].mean()

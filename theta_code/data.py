@@ -606,6 +606,7 @@ class Data:
         for i in range(1, len(cleaner)):
             c += cleaner[i]
         c.to_pickle(self.par.data.dir + f'{self.name}/side/cleaner_all.p')
+        c = pd.read_pickle(self.par.data.dir + f'{self.name}/side/cleaner_all.p')
 
         df.to_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
 
