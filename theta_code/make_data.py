@@ -24,6 +24,7 @@ par.data.mw =False
 par.update_model_name()
 
 self = Data(par)
+self.historical_theta(True)
 # self.pre_process_all()
 
 # self.create_a_dataset()
