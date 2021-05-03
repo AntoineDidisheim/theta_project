@@ -391,7 +391,7 @@ class Data:
         X = s0 * np.arange(0.8, 1.3, 0.1)
         IV = cb(X)
 
-        if self.par.data.opt_smooth == OptSmooth.EXT:
+        if self.par.data.opt_smooth in [OptSmooth.EXT, OptSmooth.EXT_CUBIC]:
             m = np.concatenate([K[:, 0], PRICE[:, 0], [rf], s0])
         if self.par.data.opt_smooth == OptSmooth.INT:
             m = np.concatenate([K, PRICE, [rf], s0])
