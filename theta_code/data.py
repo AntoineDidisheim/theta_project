@@ -172,32 +172,45 @@ class Data:
         # self.p_df.quantile(0.999)
         self.p_df = self.p_df.clip(-3.0, 3.0)
 
-    def load_and_merge_pred_opt(self):
-        cleaner = pd.read_pickle(self.par.data.dir + f'{self.name}/side/cleaner_all.p')
-        opt = self.load_opt()
+    def load_and_merge_pred_opt(self, reload =False):
+        # df = pd.read_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
+        if reload:
+            cleaner = pd.read_pickle(self.par.data.dir + f'{self.name}/side/cleaner_all.p')
+            print('a')
+            opt = self.load_opt()
+            print('b')
+            if self.par.data.crsp:
+                if self.par.data.comp:
+                    pred = self.load_pred_compustat_and_crsp()
+                else:
+                    pred = self.load_pred_crsp_only()
+            print('c')
 
-        if self.par.data.crsp:
-            if self.par.data.comp:
-                pred = self.load_pred_compustat_and_crsp()
-            else:
-                pred = self.load_pred_crsp_only()
+            # pred['month'] = pred['date'].dt.year * 100 + pred['date'].dt.month
+            # del pred['date']
 
-        # pred['month'] = pred['date'].dt.year * 100 + pred['date'].dt.month
-        # del pred['date']
+            df = pred.merge(opt, on=[self.id_col, 'date'])
+            print('d')
+            # cleaner = cleaner.append(self.count_sample(df, 'Merge with predictors'))
+            print('e')
 
-        df = pred.merge(opt, on=[self.id_col, 'date'])
-        cleaner = cleaner.append(self.count_sample(df, 'Merge with predictors'))
+            df = df.dropna()
+            print('f')
+            cleaner = cleaner.append(self.count_sample(df, 'Drop missing predictors'))
+            print('g')
+            print(cleaner,flush=True)
 
-        df = df.dropna()
-        cleaner = cleaner.append(self.count_sample(df, 'Drop missing predictors'))
-        print(cleaner,flush=True)
+            ind = df['cp'] == 'C'
+            mc = df.loc[ind, :].groupby(['date', self.id_col])['ret'].count().max()
+            ind = df['cp'] == 'P'
+            mp_ = df.loc[ind, :].groupby(['date', self.id_col])['ret'].count().max()
+            print('Max nb call/put in sample:', mc, mp_,flush=True)
+            cleaner.to_pickle(self.par.data.dir + f'{self.name}/side/cleaner_after_merge.csv')
 
-        ind = df['cp'] == 'C'
-        mc = df.loc[ind, :].groupby(['date', self.id_col])['ret'].count().max()
-        ind = df['cp'] == 'P'
-        mp_ = df.loc[ind, :].groupby(['date', self.id_col])['ret'].count().max()
-        print('Max nb call/put in sample:', mc, mp_,flush=True)
-        cleaner.to_pickle(self.par.data.dir + f'{self.name}/side/cleaner_after_merge.csv')
+            df.to_pickle(self.par.data.dir + f'{self.name}/int/opt_merge.p')
+
+        else:
+            df = pd.read_pickle(self.par.data.dir + f'{self.name}/int/opt_merge.p')
         return df
 
     def create_a_dataset(self):
@@ -208,6 +221,7 @@ class Data:
                 pred = self.load_pred_compustat_and_crsp()
             else:
                 pred = self.load_pred_crsp_only()
+        print('Load pred', flush=True)
 
         # specify here the list of DataType which do not need to be merge with any dataset
         if self.par.data.opt and (not self.par.data.comp) and (not self.par.data.crsp):
@@ -216,8 +230,12 @@ class Data:
             df = df.merge(raw.ff[['date', 'rf']])
             pred_col = []
         else:
+            print('start load merge and pred')
             df = self.load_and_merge_pred_opt()
+            print('start next step')
             pred_col = list(pred.drop(columns=[self.id_col, 'date']).columns)
+
+        print('Loaded df', flush=True)
 
         if self.par.data.mw:
             mw = self.marting_wagner_return()
@@ -226,6 +244,9 @@ class Data:
             mw = mw.loc[~ind, :]
             df = df.merge(mw, how='left')
             pred_col.append('MW')
+
+
+        print('Loading finish', flush=True)
 
         ##################
         # process a day
@@ -243,6 +264,8 @@ class Data:
 
 
         RF = self.load_rf()
+        print('Start loop', flush=True)
+
         for i in range(t.shape[0]):
             id = t[['date', self.id_col]].iloc[i, :]
             ind = (df['date'] == id['date']) & (df[self.id_col] == id[self.id_col])
