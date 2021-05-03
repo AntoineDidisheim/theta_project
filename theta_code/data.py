@@ -9,8 +9,6 @@ import socket
 if socket.gethostname() !='work':
     import matplotlib
     matplotlib.use('Agg')
-from matplotlib import pyplot as plt
-from pathos.multiprocessing import ProcessingPool as Pool
 from sklearn.neighbors import KNeighborsRegressor
 
 pd.set_option('display.max_columns', 500)
@@ -19,9 +17,8 @@ from scipy.interpolate import CubicSpline
 from scipy.interpolate import interp1d
 from Econ import Econ
 from scipy import optimize as opti
-import multiprocessing as mp
 from scipy import stats
-from pandarallel import pandarallel
+# from pandarallel import pandarallel
 
 
 class RawData:
@@ -1467,16 +1464,16 @@ class Data:
             return iv[0]
 
 
-        pandarallel.initialize(progress_bar=True)
-        r= df.parallel_apply(find,axis=1)
+        # pandarallel.initialize(progress_bar=True)
+        # r= df.parallel_apply(find,axis=1)
         # r = pd.read_pickle('temp.p')
         # r = r.values
         # r.shape
-        df['impl_volatility'] =r
-        df.to_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
-
-        p=BlackScholes_price(df['impl_volatility'],df['S0'],df['rf'],df['strike'])
-        print('Error', (p-df['opt_price']).abs().mean())
+        # df['impl_volatility'] =r
+        # df.to_pickle(self.par.data.dir + f'{self.name}/int/opt.p')
+        #
+        # p=BlackScholes_price(df['impl_volatility'],df['S0'],df['rf'],df['strike'])
+        # print('Error', (p-df['opt_price']).abs().mean())
 
 
 
