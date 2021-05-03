@@ -55,6 +55,7 @@ class CrossValidation(Enum):
 class OptSmooth(Enum):
     EXT = 1
     INT = 2
+    EXT_CUBIC = 3
 
 
 ##################
@@ -94,7 +95,7 @@ class DataParams:
         self.max_opt = 323
         self.val_split = 0.01
 
-        self.opt_smooth = OptSmooth.EXT
+        self.opt_smooth = OptSmooth.EXT_CUBIC
 
         self.crsp = True
         self.comp =False

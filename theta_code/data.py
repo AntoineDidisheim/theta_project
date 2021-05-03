@@ -250,7 +250,7 @@ class Data:
             id = t[['date', self.id_col]].iloc[i, :]
             ind = (df['date'] == id['date']) & (df[self.id_col] == id[self.id_col])
             day = df.loc[ind, :]
-            day['delta']
+
             day=day.loc[day['delta'].abs()<=0.5,:]
 
             if day.loc[:, ['strike', 'opt_price', 'impl_volatility']].drop_duplicates().shape[0]>1:
@@ -322,12 +322,15 @@ class Data:
 
         t = day.loc[:, ['strike', 'opt_price','impl_volatility']].copy().sort_values(['strike', 'opt_price','impl_volatility']).reset_index(drop=True).groupby('strike').mean().reset_index()
 
-
-
         # cb = CubicSpline(t['strike'], t['opt_price'])
         bound = (t['impl_volatility'].iloc[0], t['impl_volatility'].iloc[-1])
-        cb = interp1d(t['strike'], t['impl_volatility'], bounds_error=False, fill_value=bound)
-        if self.par.data.opt_smooth == OptSmooth.EXT:
+
+        if self.par.data.opt_smooth in [OptSmooth.EXT_CUBIC]:
+            cb = CubicSpline(t['strike'], t['impl_volatility'],extrapolate=False)
+        else:
+            cb = interp1d(t['strike'], t['impl_volatility'], bounds_error=False, fill_value=bound)
+
+        if self.par.data.opt_smooth in [OptSmooth.EXT, OptSmooth.EXT_CUBIC]:
             K = np.linspace(s0 * 1/3, s0 * 3, Constant.GRID_SIZE)
         if self.par.data.opt_smooth == OptSmooth.INT:
             K = np.linspace(t['strike'].min(), t['strike'].max(), Constant.GRID_SIZE)
@@ -335,6 +338,11 @@ class Data:
 
 
         IV = cb(K)
+        if np.any(pd.isna(IV)):
+            IV[0] = IV[~np.isnan(IV)][0]
+            IV=pd.DataFrame(IV).fillna(method='ffill').values
+
+
 
         def BlackScholes_price(S, r, sigma, K):
             dt = 28/365
@@ -352,6 +360,17 @@ class Data:
 
 
         PRICE=BlackScholes_price(S,rf,IV,K)
+
+
+        # plt.plot(K,IV)
+        # # plt.xlim(39,55)
+        # plt.show()
+        #
+        # plt.plot(K, PRICE)
+        # # plt.xlim(39, 55)
+        # plt.show()
+
+
         #
         #
         # plt.plot(t['strike'], t['impl_volatility'])

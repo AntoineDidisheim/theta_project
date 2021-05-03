@@ -3,8 +3,8 @@ from parameters import  *
 
 
 par = Params()
-par.name_detail = 'new_version'
-par.model.tex_dir = 'new_version'
+par.name_detail = 'cubic'
+par.model.tex_dir = 'cubic'
 par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
@@ -16,16 +16,16 @@ par.model.output_range = 1.2
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MAE
-par.data.opt_smooth = OptSmooth.EXT
+par.data.opt_smooth = OptSmooth.EXT_CUBIC
 par.data.comp = True
 par.data.ret = ReturnType.RET
-par.data.min_opt_per_day = 3
+par.data.min_opt_per_day = 2
 par.data.mw =False
 par.update_model_name()
 
 self = Data(par)
 # self.historical_theta(True)
-# self.pre_process_all()
+self.pre_process_all()
 
 # self.create_a_dataset()
 # ()
