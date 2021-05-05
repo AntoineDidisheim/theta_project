@@ -95,20 +95,20 @@ class DataParams:
         self.max_opt = 323
         self.val_split = 0.01
 
-        self.opt_smooth = OptSmooth.EXT_CUBIC
+        self.opt_smooth = OptSmooth.EXT
 
         self.crsp = True
-        self.comp =False
+        self.comp =True
         self.opt = True
         self.mw = False
         self.hist_theta = True
         self.last_friday = False
-        self.min_opt_per_day = 10
+        self.min_opt_per_day = 3
 
-        # self.max_ret = 0.2
-        # self.min_ret = -0.2
-        self.max_ret = 200000
-        self.min_ret = -200000
+        self.max_ret = 0.2
+        self.min_ret = -0.2
+        # self.max_ret = 200000
+        # self.min_ret = -200000
 
         self.ret = ReturnType.LOG
 

@@ -474,7 +474,7 @@ class Trainer:
         p=t.groupby('port')['ret'].apply(av_geom)
 
 
-        df['port']=df.groupby('date')['glb3_D30'].transform(func)
+        df['port']=df.groupby('date')['glb2_D30'].transform(func)
         t=df.groupby(['port','date'])['ret'].mean().reset_index()
         b=t.groupby('port')['ret'].apply(av_geom)
 
