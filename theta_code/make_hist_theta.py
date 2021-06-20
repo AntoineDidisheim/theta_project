@@ -2,6 +2,7 @@ from data import *
 from parameters import  *
 from multiprocessing import Pool
 import sys
+import gc
 
 try:
     grid_id = int(sys.argv[1])
@@ -32,10 +33,12 @@ par.data.mw =True
 par.update_model_name()
 
 
-self = Data(par)
-for grid_id in range(5,27):
+for grid_id in range(7,27):
+    self = Data(par)
     print('########################', 'start working on batch', grid_id, flush=True)
     self.do_batch_hist_theta(grid_id)
+    del self
+    gc.collect()
 
 
 

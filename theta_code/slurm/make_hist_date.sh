@@ -4,7 +4,7 @@ counter=0
 while [ $counter -le 26 ]
   do
     echo $counter
-    taskset -c 2 python make_hist_theta.py $counter 2&>1 1&>"out_$counter.txt" &
+    python make_hist_theta.py $counter 2&>1 1&>"out_$counter.txt"
     disown -a
     ((counter++))
     sleep 10

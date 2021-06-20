@@ -2,6 +2,7 @@ from data import *
 from parameters import  *
 from multiprocessing import Pool
 import sys
+import gc
 
 try:
     grid_id = int(sys.argv[1])
@@ -32,13 +33,15 @@ par.data.mw =True
 par.update_model_name()
 
 
-self = Data(par)
 # self.historical_theta(create_batch=True)
-self.find_batch_vilknoy_thetta(grid_id)
+
 #
-# for grid_id in range(0,27):
-#     print('########################', 'start working on batch', grid_id, flush=True)
-#     self.do_batch_hist_theta(grid_id)
+for grid_id in range(0,27):
+    self = Data(par)
+    print('########################', 'start working on batch', grid_id, flush=True)
+    self.find_batch_vilknoy_thetta(grid_id)
+    del self
+    gc.collect()
 
 
 
