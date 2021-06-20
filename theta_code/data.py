@@ -1665,8 +1665,8 @@ class Data:
         label=label.merge(them[['date','permno','glb2_D30']],how='left')
 
         res = pd.DataFrame()
-        # for i in range(m.shape[0]):
-        for i in range(100):
+        for i in range(m.shape[0]):
+        # for i in range(100):
             d = label.iloc[i, 0]
             g = label.iloc[i, 1]
             ind = (label['date'] == d) & (label[self.id_col] == g)
