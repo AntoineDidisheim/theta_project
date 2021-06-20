@@ -33,6 +33,8 @@ par.update_model_name()
 
 
 self = Data(par)
+self.historical_theta(create_batch=True)
+
 for grid_id in range(0,27):
     print('########################', 'start working on batch', grid_id, flush=True)
     self.do_batch_hist_theta(grid_id)
