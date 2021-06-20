@@ -45,9 +45,9 @@ self = Data(par)
 #         self.load_pred_compustat_and_crsp(reload=True)
 #     else:
 #         self.load_pred_crsp_only(reload=True)
-#
+
 # self.historical_theta(reload=True)
 
-for i in range(5,10):
+for i in range(10,17):
     self.create_a_dataset_batch(i, batch_size=25000)
 

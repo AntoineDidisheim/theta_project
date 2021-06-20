@@ -56,12 +56,14 @@ class Trainer:
             r_ = np.sort(model.data.label_df['date'].dt.year.unique())[1:].tolist()
         if self.par.model.cv == CrossValidation.RANDOM:
             r_ = range(10)
-
+        print('THE RANGE', r_)
         for i in r_:
             if self.par.model.cv in [CrossValidation.YEAR_BY_YEAR, CrossValidation.EXPANDING]:
                 model.data.set_year_test(i)
             if self.par.model.cv == CrossValidation.RANDOM:
                 model.data.move_shuffle()
+
+
 
             # r2, theta, mse, p_log, p_norm
             r2, theta, mse, p_log, p_norm = model.get_perf_oos()
@@ -82,8 +84,11 @@ class Trainer:
             print('########### mse')
             print('old', mse, 'new', mse_new, 'bench', mse_bench)
             model.create_network()
-        df = pd.concat(res)
-        df.to_pickle(self.res_dir + 'df.p')
+            ## resevae after each yerar
+            print('#'*50)
+            print('save year', r_)
+            print('#'*50)
+            pd.concat(res).to_pickle(self.res_dir + 'df.p')
 
     def create_report_sec(self):
         par = self.par
@@ -121,9 +126,22 @@ class Trainer:
 
         df = pd.read_pickle(self.res_dir + 'df.p')
 
+
+
+
         # for now the return are all normal in the perf report
         ret_type_str = 'R'
-        df['pred'] = df['pred_norm']
+        df['pred'] = df['pred_norm'].clip(-0.2,0.2)
+
+        ### cross sectional trimming
+        df['pred_abs'] = df['pred'].abs()
+        df['max']=df.groupby('date')['pred_abs'].transform('quantile',0.99)
+        df.loc[df['pred_abs'] > df['max'], 'pred'] = np.sign(df.loc[df['pred_abs'] > df['max'], 'pred']) * df.loc[df['pred_abs'] > df['max'], 'max']
+
+        df['bench'] = df['bench'].clip(-0.2,0.2)
+
+
+
 
         # if self.par.data.ret == ReturnType.LOG:
         #     ret_type_str = 'log(R)'
@@ -137,86 +155,61 @@ class Trainer:
 
 
 
+
+
         ##################
         # multiple r2
         ##################
         ## add marting wagner
         # t=Data(self.par).marting_wagner_return()
-
+        id_key = 'permno'
         mw = Data(self.par).marting_wagner_return()
-        pr = Data(self.par).load_all_price()[['permno', 'gvkey']]
-        pr['permno'] = pr['permno'].astype(int)
-        pr = pr.drop_duplicates()
-        mw = mw.merge(pr, how='left')
+        try:
+            # if gvkey is main key, add permno to mw
+            pr = Data(self.par).load_all_price()[['permno', 'gvkey']]
+            pr['permno'] = pr['permno'].astype(int)
+            pr = pr.drop_duplicates()
+            mw = mw.merge(pr, how='left')
+            id_key='gvkey'
+        except:
+            pass
         # their MW
         them = pd.read_csv('data/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
         them['date'] = pd.to_datetime(them['date'])
         them['permno'] = them['permno'].astype(int)
         mw = mw.merge(them, how='left')
-        t=mw[['date','gvkey','MW','mw30']]
+        t=mw[['date',id_key,'MW','mw30']]
         df = df.merge(t, how='left')
         df['mw30'] = df['mw30']/12
-        df['mw30'] = df['mw30']*20/30
+        # df['mw30'] = df['mw30']*20/30
         # their lower bound
         them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
 
         them['date'] = pd.to_datetime(them['date'])
         them['permno'] = them['permno'].astype(int)
-        them = them.merge(pr)
+        try:
+            # again add permno if main is gvkey
+            them = them.merge(pr)
+        except:
+            pass
 
-        t=them[['date','gvkey','glb2_D30','glb3_D30']]
+        t=them[['date',id_key,'glb2_D30','glb3_D30']]
         df = df.merge(t, how='left')
         df['glb2_D30'] = df['glb2_D30'] / 12
         df['glb3_D30'] = df['glb3_D30'] / 12
-        df['glb3_D30'] = df['glb3_D30'] *20/30
+        # df['glb3_D30'] = df['glb3_D30'] *20/30
 
-        # plt.scatter(df['pred'],df['glb3_D30'],color='k',marker='+')
-        # plt.xlabel('Our estimation')
-        # plt.ylabel('glb3 D30')
-        # plt.grid()
-        # plt.show()
-        #
-        # plt.scatter(df['bench'],df['glb3_D30'],color='k',marker='+')
-        # plt.xlabel(r'$\theta = 1.0$')
-        # plt.ylabel('glb3 D30')
-        # plt.grid()
-        # plt.show()
+
+
 
 
         df['month'] = df['date'].dt.year*100+df['date'].dt.month
-        ind=df['month'] == 200805
-        ind=df['month'] == 200805
-        ind=df['gvkey'] ==114628
-
-        df.columns
-
-        df['month'].unique()
 
 
-        # plt.scatter(df.loc[ind,'glb3_D30'],df.loc[ind,'ret'],color='k',marker='+')
-        # plt.xlabel('glb3 D30')
-        # plt.ylabel(r'true return')
-        # plt.grid()
-        # plt.show()
-        #
-        # plt.scatter(df.loc[ind,'pred'], df.loc[ind,'ret'], color='k', marker='+')
-        # plt.xlabel('Our estimation')
-        # plt.ylabel(r'true return')
-        # plt.grid()
-        # plt.show()
-
-
-
-        # df['mw30'] = df['mw30']/12
-        # df['mw30'] = df['mw30']*20/30
-
-
-
-        # end lower bound
 
         try:
             t=Data(self.par).historical_theta()
-            df = df.merge(t[['date','gvkey','pred']].rename(columns={'pred':'hist_theta'}), how='left')
+            df = df.merge(t[['date',id_key,'pred']].rename(columns={'pred':'hist_theta'}), how='left')
             t = Data(self.par).load_all_price(False)
             t['year'] = t['date'].dt.year
             df['year'] =  df['date'].dt.year
@@ -227,6 +220,8 @@ class Trainer:
             df=df.merge(t)
         except:
             df[r'$\bar{MKT}_{t-1}$'] = np.nan
+            df[r'hist_theta'] = np.nan
+            overall_average = Data(self.par).load_all_price()['ret'].mean()
 
         try:
             t = Data(self.par)
@@ -235,6 +230,18 @@ class Trainer:
             df=df.merge(t.label_df)
         except:
             df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = np.nan
+
+
+
+        if 'hist_theta' not in df.columns:
+            df['hist_theta']=np.nan
+        if '$\\bar{MKT}_{t}$' not in df.columns:
+            df['$\\bar{MKT}_{t}$']=np.nan
+        df.describe(np.arange(0,1.05,0.05))
+        ind = (df['ret']>=-0.5) & (df['ret']<=0.5)
+        df = df.loc[ind,:]
+
+
 
         def r2(df_,y_bar, name='NNET'):
             try:
@@ -245,19 +252,7 @@ class Trainer:
                 r = (pd.Series({name: r2_pred})*100).round(2)
             except:
                 r = np.nan
-
             return r
-        #
-        # temp = df.copy()
-        # temp = temp.loc[~pd.isna(df['mw30']), :]
-        # 1 - ((temp['ret'] - temp['glb3_D30']) ** 2).sum() / ((temp['ret'] - temp['mw30']) ** 2).sum()
-        #
-
-
-
-        df.describe(np.arange(0,1.05,0.05))
-        ind = (df['ret']>=-0.5) & (df['ret']<=0.5)
-        df = df.loc[ind,:]
         def get_all_r(df):
             r=[
                 r2(df,(1.06)**(1/12)-1,r'6\% premium'),
@@ -275,7 +270,48 @@ class Trainer:
             ]
             return pd.concat(r).sort_values()
 
+        def r2_abs(df_,y_bar, name='NNET'):
+            try:
+                if np.sum(pd.isna(y_bar))>0:
+                    df_ = df_.loc[~pd.isna(y_bar),:]
+
+                r2_pred = 1 - ((df_['ret'] - df_['pred']).abs()).sum() / ((df_['ret'] - y_bar).abs()).sum()
+                r = (pd.Series({name: r2_pred})*100).round(2)
+            except:
+                r = np.nan
+            return r
+        def get_all_abs(df):
+            r=[
+                r2_abs(df,(1.06)**(1/12)-1,r'6\% premium'),
+                r2_abs(df,df['MW'],'Martin Wagner'),
+                r2_abs(df,df['mw30'],'Martin Wagner downloaded'),
+                r2_abs(df,0.0, r'$R=0.0$'),
+                r2_abs(df, df['hist_theta'],r'historical $\theta$'),
+                r2_abs(df, df['bench'],r'$\theta=1.0$'),
+                r2_abs(df, df[r'$\bar{MKT}_{t}$'],r'$\bar{MKT}_{t}$'),
+                r2_abs(df, df[r'$\bar{MKT}_{t-1}$'],r'$\bar{MKT}_{t-1}$'),
+                r2_abs(df, overall_average,r'$\bar{MKT}$'),
+                r2_abs(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
+                r2_abs(df, df[r'glb2_D30'],r'Vilkny glb2 D30'),
+                r2_abs(df, df[r'glb3_D30'],r'Vilkny glb3 D30')
+            ]
+            return pd.concat(r).sort_values()
+
         df['year'] = df['date'].dt.year
+
+
+        t_abs=df.groupby('year').apply(lambda x: get_all_abs(x)).reset_index()
+        t_abs.columns = ['Year','Type',r'$R^2$']
+        t_abs=t_abs.pivot(columns='Year',index='Type')
+        t_abs['All'] = get_all_abs(df)
+        t_abs=t_abs.sort_values('All')
+        tt = df.groupby('year')['date'].count()
+        tt['All'] = df.shape[0]
+        t_abs  = t_abs.T
+        t_abs['nb. obs'] = tt.values
+        t_abs = t_abs.T
+
+
         t=df.groupby('year').apply(lambda x: get_all_r(x)).reset_index()
         t.columns = ['Year','Type',r'$R^2$']
         t=t.pivot(columns='Year',index='Type')
@@ -286,12 +322,95 @@ class Trainer:
         t  = t.T
         t['nb. obs'] = tt.values
         t = t.T
-        t.loc['nb. obs',:]
-        t
+
+        # ### r2 with cheat
+        # df_t = df.copy()
+        # df_t['weird']=df_t.groupby(['year','glb2_D30'])['glb2_D30'].transform('count')
+        # ind=(df_t['weird']>20) & (df_t['pred']>df_t['glb2_D30'])
+        # df_t.loc[ind,'pred']  =df_t.loc[ind,'glb2_D30']
+        #
+        # t = df_t.groupby('year').apply(lambda x: get_all_r(x)).reset_index()
+        # t.columns = ['Year', 'Type', r'$R^2$']
+        # t = t.pivot(columns='Year', index='Type')
+        # t['All'] = get_all_r(df)
+        # t = t.sort_values('All')
+        # tt = df.groupby('year')['date'].count()
+        # tt['All'] = df.shape[0]
+        # t = t.T
+        # t['nb. obs'] = tt.values
+        # t = t.T
 
         t.to_latex(self.dir_tables+'all_r2.tex', escape=False)
         self.paper.append_table_to_sec(table_name='all_r2.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
-                                       caption='The table below shows the out of sample $R^2$ of our model against various benchmark')
+                                       caption='The table below shows the out of sample $L_2 R^2$ of our model against various benchmark')
+
+        t_abs.to_latex(self.dir_tables+'all_r2_ABS.tex', escape=False)
+        self.paper.append_table_to_sec(table_name='all_r2_ABS.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
+                                       caption='The table below shows the out of sample $L_1 R^2$ of our model against various benchmark')
+
+
+
+        ##################
+        # beta analysis
+        ##################
+        t=df.groupby('date')[['pred','glb2_D30','ret']].mean().reset_index()
+        t['year'] = t['date'].dt.year
+        t['us_error'] = (t['pred'] - t['ret']) ** 2
+        t['vilkny_error'] = (t['glb2_D30'] - t['ret']) ** 2
+        t.groupby(['year'])['us_error','vilkny_error'].mean()
+        t['alpha'] = 1.0
+
+        max_lag = 4
+        table = didi.TableReg(rename_dict={'pred':r'$\phi(X_i)$', 'glb2_D30':"Vilknoy's prediction"})
+        m=sm.OLS(t['ret'],t[['pred','alpha']]).fit(cov_type='HAC',cov_kwds={'maxlags':max_lag})
+        table.add_reg(m)
+        m=sm.OLS(t['ret'],t[['glb2_D30','alpha']]).fit(cov_type='HAC',cov_kwds={'maxlags':max_lag})
+        table.add_reg(m)
+        m=sm.OLS(t['ret'],t[['pred']]).fit(cov_type='HAC',cov_kwds={'maxlags':max_lag})
+        table.add_reg(m)
+        m=sm.OLS(t['ret'],t[['glb2_D30']]).fit(cov_type='HAC',cov_kwds={'maxlags':max_lag})
+        table.add_reg(m)
+        m=sm.OLS(t['ret'],t[['glb2_D30','pred']]).fit(cov_type='HAC',cov_kwds={'maxlags':max_lag})
+        table.add_reg(m)
+        table.save_tex(self.dir_tables+'market_reg.tex')
+
+
+        self.paper.append_table_to_sec(table_name='market_reg.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
+                                       caption='The table above show result of regressions of average monthly returns on the average predictions')
+
+
+        ##################
+        # year year analysis
+        ##################
+        r2_list=t.loc['Vilkny glb2 D30',:].iloc[:-1].reset_index().sort_values('Vilkny glb2 D30')
+        ind_2 = df.loc[:, 'pred'].abs() <= 0.05
+        for y in r2_list['Year']:
+            r2_v = r2_list.loc[r2_list['Year']==y,'Vilkny glb2 D30'].iloc[0]
+            ind=df['year']==y
+            ind_strong=ind & ind_2
+            plt.scatter(df.loc[ind,'glb2_D30'],df.loc[ind,'pred'],marker='+',color='k')
+            plt.ylabel('NNET')
+            plt.xlabel('Glb2_D30')
+            plt.tight_layout()
+            plt.savefig(self.dir_figs + f'{y}_expl_weak.png')
+            plt.close()
+
+            plt.scatter(df.loc[ind_strong, 'glb2_D30'], df.loc[ind_strong, 'pred'], marker='+', color='k')
+            plt.ylabel('NNET')
+            plt.xlabel('Glb2_D30')
+            plt.tight_layout()
+            plt.savefig(self.dir_figs + f'{y}_expl_strong.png')
+            plt.close()
+
+            get_all_r(df.loc[ind&ind_2,:])
+
+
+            self.paper.append_fig_to_sec(fig_names=[f'{y}_expl_weak', f'{y}_expl_strong'], sec_name=par.name, sub_dir=par.name, overall_label=f"yy_{y}",
+                                         main_caption=fr"The figure above explore the relationship between our prediction and Vilkny's for year {y}. "
+                                                      fr"Panel (a) show the full scatter plots, panel (b) cuts extreme prediction of the network at +-5\%."
+                                                      fr"The overall Glb2 D30 $R^2$ for this year was {r2_v}")
+
+
 
         ##################
         # r2 plots
@@ -300,7 +419,7 @@ class Trainer:
         def r2(df_):
             r2_pred = 1 - ((df_['ret'] - df_['pred']) ** 2).sum() / ((df_['ret'] - 0.0) ** 2).sum()
             r2_bench = 1 - ((df_['ret'] - df_['bench']) ** 2).sum() / ((df_['ret'] - 0.0) ** 2).sum()
-            return pd.Series({'NNET': r2_pred, r'$\theta=1.0$': r2_bench})
+            return pd.Series({'NNET': r2_pred, rf'$\theta={self.par.model.bench_theta}$': r2_bench})
 
         r2_all = (r2(df) * 100).round(2)
 
@@ -472,16 +591,17 @@ class Trainer:
         df['port']=df.groupby('date')['pred'].transform(func)
         t=df.groupby(['port','date'])['ret'].mean().reset_index()
         p=t.groupby('port')['ret'].apply(av_geom)
+        p = (1+p)**12 -1
 
-
-        df['port']=df.groupby('date')['glb2_D30'].transform(func)
+        df['port']=df.groupby('date')['glb3_D30'].transform(func)
         t=df.groupby(['port','date'])['ret'].mean().reset_index()
+        # b=t.groupby('port')['ret'].mean()
         b=t.groupby('port')['ret'].apply(av_geom)
+        b = (1+b)**12  -1
 
 
-
-        b.name = r'$\theta=1.0$'
-        p.name = r'$Vilknoy$'
+        b.name = r'$Vilknoy$'
+        p.name = r'$\theta_{nnet}$'
         q_final = pd.DataFrame([b, p]).T
         q_final.index += 1
         plt.plot(q_final.index, q_final.iloc[:, 0], label=q_final.columns[0], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0])

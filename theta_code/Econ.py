@@ -45,8 +45,6 @@ class Econ:
         S = m[(2*Constant.GRID_SIZE)+1]
         theta = m[(2*Constant.GRID_SIZE)+2]
 
-
-
         def trapezoidal_integral_approx(t, y):
             return tf.reduce_sum(tf.multiply(t[1:] - t[:-1], (y[1:] + y[:-1]) / 2.), name='trapezoidal_integral_approx')
 

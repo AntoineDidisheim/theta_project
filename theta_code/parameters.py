@@ -56,6 +56,7 @@ class OptSmooth(Enum):
     EXT = 1
     INT = 2
     EXT_CUBIC = 3
+    VOLA_CUBIC = 4
 
 
 ##################
@@ -85,6 +86,9 @@ class ParamsModels:
         self.tex_dir = 'tex_res'
         self.tex_name = 'theta'
 
+        self.bench_theta = 0.5
+
+
 
 class DataParams:
     def __init__(self):
@@ -97,6 +101,8 @@ class DataParams:
 
         self.opt_smooth = OptSmooth.EXT
 
+
+        self.pred_as_input = False
         self.crsp = True
         self.comp =True
         self.opt = True
@@ -152,6 +158,12 @@ class Params:
             self.name += 'MW'
         if self.data.last_friday:
             self.name += 'LF'
+
+        if self.model.cv == CrossValidation.EXPANDING:
+            self.name += 'ExpandingCv'
+
+        if self.data.pred_as_input:
+            self.name += 'PredAsinput'
 
         n+=str(self.data.opt_smooth.name)
         n = n.replace('.','')

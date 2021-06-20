@@ -51,7 +51,8 @@ class NetworkTheta:
             p = p_norm
         theta = pred[:, -1]
         r2 = r2_score(y, p)
-        mse = np.mean((p - y) ** 2)
+        print('p',p.shape,y.shape)
+        mse = np.mean((p - y[:,0]) ** 2)
         return r2, theta, mse, p_log, p_norm
 
     def get_perf_oos_normal_ret(self):
@@ -71,20 +72,20 @@ class NetworkTheta:
         p = tf.map_fn(fn=Econ.g_apply_log, elems=pred)
         theta = pred[:, -1]
         r2 = r2_score(y, p)
-        mse = np.mean((p - y) ** 2)
+        mse = np.mean((p - y[:,0]) ** 2)
         return r2, theta, p, mse
 
 
     def get_bench_perf(self):
         m = self.data.test_m_df.copy()
         y = self.data.test_label_df[['ret']].values
-        m['theta'] = 1.0
+        m['theta'] = self.par.model.bench_theta
         if self.par.data.ret == ReturnType.LOG:
             p = tf.map_fn(fn=Econ.g_apply_log, elems=m.values)
         if self.par.data.ret == ReturnType.RET:
             p = tf.map_fn(fn=Econ.g_apply_ret, elems=m.values)
         r2 = r2_score(y, p)
-        mse = np.mean((p - y) ** 2)
+        mse = np.mean((p - y[:,0]) ** 2)
 
         return p, r2, mse
 
