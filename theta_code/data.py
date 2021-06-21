@@ -1681,9 +1681,9 @@ class Data:
                 r = np.apply_along_axis(Econ.g_apply_log, axis=1, arr=temp)[0]
                 return np.mean(np.square(r*1000 - y*1000))
 
-            b = opti.Bounds([0.0], [1.0])
+            b_nd = opti.Bounds([0.0], [1.0])
             try:
-                r = opti.minimize(fun=func, x0=0.5, method='trust-constr', bounds=b)
+                r = opti.minimize(fun=func, x0=0.5, method='trust-constr', bounds=b_nd)
                 theta = r['x'][0]
                 func(theta)
                 m_pred = m.iloc[i, :]
