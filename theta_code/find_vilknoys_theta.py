@@ -36,7 +36,7 @@ par.update_model_name()
 # self.historical_theta(create_batch=True)
 
 #
-for grid_id in range(0,27):
+for grid_id in range(9,27):
     self = Data(par)
     print('########################', 'start working on batch', grid_id, flush=True)
     self.find_batch_vilknoy_thetta(grid_id)
@@ -44,7 +44,13 @@ for grid_id in range(0,27):
     gc.collect()
 
 
+d=par.data.dir+'temp_vilknoy_theta/'
+L=os.listdir(d)
 
+df = pd.DataFrame()
+for l in L:
+    df = df.append(pd.read_pickle(d+l),ignore_index=True)
+df.to_pickle(par.data.dir+'raw_merge/v_theta.p')
 
 # if grid_id == -1:
 #     self.historical_theta(create_batch=True)

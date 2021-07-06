@@ -107,6 +107,7 @@ class DataParams:
         self.comp =True
         self.opt = True
         self.mw = False
+        self.vilk_theta = True
         self.hist_theta = True
         self.last_friday = False
         self.min_opt_per_day = 3
@@ -117,6 +118,8 @@ class DataParams:
         # self.min_ret = -200000
 
         self.ret = ReturnType.LOG
+        self.var_subset = None
+
 
 
 # store all parameters into a single object

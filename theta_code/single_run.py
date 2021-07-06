@@ -30,42 +30,31 @@ except:
 # Set parameters
 ##################
 par = Params()
-par.name_detail = 'rf_fix'
-par.model.tex_dir = 'tex/rf_fix'
-par.model.cv = CrossValidation.EXPANDING
+par.name_detail = 'surf'
+par.model.tex_dir = 'surf'
+par.model.cv = CrossValidation.YEAR_BY_YEAR
 par.model.activation = 'swish'
 par.model.learning_rate = 1e-2
 par.model.layers = [10]
-par.model.batch_size = 252
+par.model.batch_size = 32
 par.model.dropout = 0.0
-
-
-# par.model.layers = [64,32,16]
-# par.model.batch_size = 252
-# par.model.dropout = 0.1
 # par.model.output_range = 1.2
-# par.model.out_min=-5.0
-# par.model.output_range = 5.0
-par.model.out_min=-0.0
-par.model.output_range = 1.0
-# par.model.out_min=-1.2
-# par.model.output_range = 3.0
-
-# (self.par.model.output_range-self.par.model.out_min) + self.par.model.out_min
-# par.model.out_min=1.0
-# par.model.output_range = 2.0
-par.model.E = 3
+par.model.output_range = 5.0
+par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MAE
 par.data.opt_smooth = OptSmooth.VOLA_CUBIC
 par.data.comp = True
+par.data.crsp = True
 par.data.ret = ReturnType.RET
 par.data.min_opt_per_day = 2
 par.data.mw =True
 par.update_model_name()
 
-par.data.comp = True
-par.data.crsp = True
+par.data.min_ret = -10000000000000
+par.data.max_ret = +10000000000000
+
+self = Data(par)
 
 
 if par.data.comp:
@@ -93,6 +82,6 @@ par.print_values()
 
 trainer = Trainer(par)
 self = trainer
-# trainer.create_paper()
-# trainer.cv_training()
-# trainer.create_report_sec()
+trainer.create_paper()
+trainer.cv_training()
+trainer.create_report_sec()

@@ -165,6 +165,24 @@ class Data:
                 print('#' * 50, i)
                 print(pd.read_pickle(d + f'label_df_{i}.p').iloc[:, :5])
 
+        if self.par.data.hist_theta:
+            hist = self.historical_theta()
+            t = self.label_df.merge(hist, how='left')['theta']
+            self.p_df['theta_hist'] = t
+
+        if self.par.data.vilk_theta:
+            t = pd.read_pickle(self.par.data.dir+'raw_merge/v_theta.p').drop_duplicates()
+            self.label_df=self.label_df.merge(t, how='left')
+
+            self.label_df=self.label_df.merge(t,how='left')
+            self.label_df['theta_v']=self.label_df['theta_v'].fillna(self.label_df['theta_v'].mean())
+            self.p_df['theta_v'] = self.label_df['theta_v'].values
+
+        if self.par.data.var_subset is not None:
+            self.p_df=self.p_df.loc[:,self.par.data.var_subset]
+
+
+
         # add the transofrmed return
         self.label_df['log_ret'] = self.label_df['ret']
         self.label_df['normal_ret'] = np.exp(self.label_df['log_ret']) - 1
@@ -180,10 +198,7 @@ class Data:
             self.p_df = self.p_df.loc[ind, :].reset_index(drop=True)
             self.label_df = self.label_df.loc[ind, :].reset_index(drop=True)
 
-        if self.par.data.hist_theta:
-            hist = self.historical_theta()
-            t = self.label_df.merge(hist, how='left')['theta']
-            self.p_df['theta_hist'] = t
+
 
         # deal with remaining inf
         self.p_df = self.p_df.replace({-np.inf: np.nan, np.inf: np.nan})
@@ -950,8 +965,10 @@ class Data:
     def load_all_price_old(self, reload=False):
         if reload:
             if self.par.data.opt_smooth in [OptSmooth.VOLA_CUBIC]:
-                df = pd.read_csv(self.par.data.dir + 'raw/' + 'price_surf.csv')
+                df = pd.read_csv(self.par.data.dir + 'raw/' + 'price_surf_2.csv')
                 df.columns = [x.lower() for x in df.columns]
+                df['ret']=pd.to_numeric(df['ret'],errors='coerce').fillna(0.0)
+                df['log_ret'] = np.log(df['ret'] + 1)
 
                 df['S0'] = (df['ask'] + df['bid']) / 2
                 df['S'] = (df['ask'] + df['bid']) / 2
@@ -962,19 +979,20 @@ class Data:
                 df['S0'] = df['S0'].abs()
 
                 T = 1
-                df['S_T'] = df.groupby([self.id_col])['S0'].shift(-T)
-                df['adj_T'] = df.groupby([self.id_col])['adj'].shift(-T)
-                df['S_T'] = df['S_T'] * df['adj_T'] / df['adj']
-                df['ret_1'] = np.log(df['S_T'] / df['S0'])
+                df[f'ret_1'] = df.groupby(self.id_col)['log_ret'].rolling(T).sum().shift(-T).reset_index()['log_ret']
+                # df[f'h{h}'] = np.exp(df[f'h{h}']) - 1
+                # df['S_T'] = df.groupby([self.id_col])['S0'].shift(-T)
+                # df['adj_T'] = df.groupby([self.id_col])['adj'].shift(-T)
+                # df['S_T'] = df['S_T'] * df['adj_T'] / df['adj']
+                # df['ret_1'] = np.log(df['S_T'] / df['S0'])
 
-                if self.par.data.opt_smooth in [OptSmooth.VOLA_CUBIC]:
-                    T = 30
-                else:
-                    T = 28
+                T = 20
+
                 df['S_T'] = df.groupby([self.id_col])['S0'].shift(-T)
                 df['adj_T'] = df.groupby([self.id_col])['adj'].shift(-T)
                 df['S_T'] = df['S_T'] * df['adj_T'] / df['adj']
-                df['ret'] = np.log(df['S_T'] / df['S0'])
+                # df['ret'] = np.log(df['S_T'] / df['S0'])
+                df[f'ret'] = df.groupby(self.id_col)['log_ret'].rolling(T).sum().shift(-T).reset_index()['log_ret']
 
                 df[self.id_col] = pd.to_numeric(df[self.id_col], errors='coerce')
                 df = df.loc[~pd.isna(df[self.id_col]), :]

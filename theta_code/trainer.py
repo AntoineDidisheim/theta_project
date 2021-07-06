@@ -50,6 +50,7 @@ class Trainer:
     def cv_training(self):
         model = NetworkTheta(self.par)
         res = []
+        res_shapeley = []
         if self.par.model.cv in [CrossValidation.YEAR_BY_YEAR]:
             r_ = np.sort(model.data.label_df['date'].dt.year.unique()).tolist()
         if self.par.model.cv in [CrossValidation.EXPANDING]:
@@ -58,37 +59,39 @@ class Trainer:
             r_ = range(10)
         print('THE RANGE', r_)
         for i in r_:
-            if self.par.model.cv in [CrossValidation.YEAR_BY_YEAR, CrossValidation.EXPANDING]:
-                model.data.set_year_test(i)
-            if self.par.model.cv == CrossValidation.RANDOM:
-                model.data.move_shuffle()
-
-
-
-            # r2, theta, mse, p_log, p_norm
-            r2, theta, mse, p_log, p_norm = model.get_perf_oos()
-            model.train()
-            r2_new, theta_new, mse_new, p_log_new, p_norm_new = model.get_perf_oos()
-            p_bench, r2_bench, mse_bench = model.get_bench_perf()
-
-            r = model.data.test_label_df.copy()
-            r['pred_no_train_log'] = p_log.numpy()
-            r['pred_no_train_norm'] = p_norm.numpy()
-            r['pred_log'] = p_log_new.numpy()
-            r['pred_norm'] = p_norm_new.numpy()
-            r['bench'] = p_bench.numpy()
-            r['theta'] = theta_new
-            res.append(r)
-            print('########### r2')
-            print('old', r2, 'new', r2_new, 'bench', r2_bench)
-            print('########### mse')
-            print('old', mse, 'new', mse_new, 'bench', mse_bench)
-            model.create_network()
-            ## resevae after each yerar
-            print('#'*50)
-            print('save year', r_)
-            print('#'*50)
-            pd.concat(res).to_pickle(self.res_dir + 'df.p')
+            try:
+                if self.par.model.cv in [CrossValidation.YEAR_BY_YEAR, CrossValidation.EXPANDING]:
+                    model.data.set_year_test(i)
+                if self.par.model.cv == CrossValidation.RANDOM:
+                    model.data.move_shuffle()
+                # r2, theta, mse, p_log, p_norm
+                r2, theta, mse, p_log, p_norm = model.get_perf_oos()
+                model.train()
+                r2_new, theta_new, mse_new, p_log_new, p_norm_new = model.get_perf_oos()
+                p_bench, r2_bench, mse_bench = model.get_bench_perf()
+                sh = model.shapeley_oos()
+                res_shapeley.append(sh)
+                r = model.data.test_label_df.copy()
+                r['pred_no_train_log'] = p_log.numpy()
+                r['pred_no_train_norm'] = p_norm.numpy()
+                r['pred_log'] = p_log_new.numpy()
+                r['pred_norm'] = p_norm_new.numpy()
+                r['bench'] = p_bench.numpy()
+                r['theta'] = theta_new
+                res.append(r)
+                print('########### r2')
+                print('old', r2, 'new', r2_new, 'bench', r2_bench)
+                print('########### mse')
+                print('old', mse, 'new', mse_new, 'bench', mse_bench)
+                model.create_network()
+                ## resevae after each yerar
+                print('#'*50)
+                print('save year', r_)
+                print('#'*50)
+                pd.concat(res).to_pickle(self.res_dir + 'df.p')
+                pd.concat(res_shapeley).to_pickle(self.res_dir + 'df_sh.p')
+            except:
+                print('skip', i)
 
     def create_report_sec(self):
         par = self.par
@@ -322,6 +325,7 @@ class Trainer:
         t  = t.T
         t['nb. obs'] = tt.values
         t = t.T
+        t_r2 = t.copy()
 
         # ### r2 with cheat
         # df_t = df.copy()
@@ -382,7 +386,7 @@ class Trainer:
         ##################
         # year year analysis
         ##################
-        r2_list=t.loc['Vilkny glb2 D30',:].iloc[:-1].reset_index().sort_values('Vilkny glb2 D30')
+        r2_list=t_r2.loc['Vilkny glb2 D30',:].iloc[:-1].reset_index().sort_values('Vilkny glb2 D30')
         ind_2 = df.loc[:, 'pred'].abs() <= 0.05
         for y in r2_list['Year']:
             r2_v = r2_list.loc[r2_list['Year']==y,'Vilkny glb2 D30'].iloc[0]
@@ -409,8 +413,6 @@ class Trainer:
                                          main_caption=fr"The figure above explore the relationship between our prediction and Vilkny's for year {y}. "
                                                       fr"Panel (a) show the full scatter plots, panel (b) cuts extreme prediction of the network at +-5\%."
                                                       fr"The overall Glb2 D30 $R^2$ for this year was {r2_v}")
-
-
 
         ##################
         # r2 plots
@@ -552,9 +554,6 @@ class Trainer:
                                      main_caption=r"The figures above show the distribution of the predicted $\theta$ split year per year. "
                                                   r"We only show years with at least 200 observations")
 
-
-
-
         k = 0
 
         t = df.groupby('date')[['theta']].mean().rolling(12).mean()
@@ -576,6 +575,42 @@ class Trainer:
                                      main_caption=fr"The figures above show the distribution of the predicted $\theta$. Panel (a) shows the histogram of all $\theta$ across time and firms. "
                                                   fr"Panel (b) shows the mean, median and quartiles across time. "
                                                   fr"We smooth the time series with a 12 month rolling average. ")
+
+
+        ##################
+        # compare with vilknoy's theta if exists
+        ##################
+        v = pd.read_pickle(self.par.data.dir + 'raw_merge/v_theta.p').drop_duplicates()
+        v['year'] = v['date'].dt.year
+        plt.hist(v['theta_v'], bins=100, color=didi.DidiPlot.COLOR[0])
+        plt.xlabel(r'$\theta$ vilknoy')
+        plt.tight_layout()
+        plt.savefig(self.dir_figs + 'theta_hist_v.png')
+        self.plt_show()
+
+        k = 0
+
+        t = v.groupby('date')[['theta_v']].mean().rolling(12).mean()
+        plt.plot(t.index, t['theta_v'], label=rf'Average $\theta vilknoy$', color=didi.DidiPlot.COLOR[k], linestyle=didi.DidiPlot.LINE_STYLE[k])
+
+        for q in [0.25, 0.5, 0.75]:
+            t = v.groupby('date')[['theta_v']].quantile(q).rolling(12).median()
+            k += 1
+            plt.plot(t.index, t['theta_v'], label=rf'$\theta$ vilknoy, q={q}', color=didi.DidiPlot.COLOR[k], linestyle=didi.DidiPlot.LINE_STYLE[k])
+        plt.grid()
+        plt.legend()
+        plt.xlabel('Date')
+        plt.ylabel(f'Predicted {ret_type_str}')
+        plt.tight_layout()
+        plt.savefig(self.dir_figs + 'theta_ts_v.png')
+        self.plt_show()
+        plt.show()
+
+        self.paper.append_fig_to_sec(fig_names=["theta_hist_v", "theta_ts_v"], sec_name=par.name, sub_dir=par.name, overall_label="theta",
+                                     main_caption=fr"The figures above show the distribution of the predicted VILKNOY $\theta$. Panel (a) shows the histogram of all $\theta$ across time and firms. "
+                                                  fr"Panel (b) shows the mean, median and quartiles across time. "
+                                                  fr"We smooth the time series with a 12 month rolling average. ")
+
 
         ##################
         # make quantile plots
@@ -650,28 +685,38 @@ class Trainer:
                                                   fr"The right panel (b) sort the predictions into quantile panel wise and show on the x-axis the average realized return, an the y-axis "
                                                   fr"the average predicted return in each quantile.")
 
-        # plt.scatter(df['pred'],df['ret'], color=didi.DidiPlot.COLOR[0], marker='+')
-        # plt.show()
-        #
-        # plt.scatter(df['bench'],df['ret'], color=didi.DidiPlot.COLOR[0], marker='+')
-        # plt.show()
 
-        # ##################
-        # # seaborn
-        # ##################
-        #
-        # with sns.axes_style('white'):
-        #     temp = df.copy()
-        #
-        #     temp=temp.loc[temp['ret'].abs()<=0.5,:]
-        #     temp=temp.loc[temp['pred'].abs()<=0.1,:]
-        #     r_ret = (temp['ret'].max()-temp['ret'].min())
-        #     r_pred = (temp['pred'].max()-temp['pred'].min())
-        #     temp['pred'] = (temp['pred']*r_ret)/r_pred
-        #     temp[['pred','ret']].std()
-        #
-        #     sns.jointplot("ret", "pred", temp, kind='hex')
-        #     plt.show()
-        #
-        #     sns.jointplot("ret", "bench", temp, kind='hex')
-        #     plt.show()
+
+
+        ##################
+        # shapeley
+        ##################
+        if os.path.exists(self.res_dir + 'df_sh.p'):
+            df = pd.read_pickle(self.res_dir + 'df_sh.p')
+            C=list(df.columns[6:])
+            t = pd.read_pickle(self.res_dir + 'df.p')
+            df=df.merge(t[['date','permno','pred_norm']])
+
+
+            # for now the return are all normal in the perf report
+            for c in C+['pred_norm']:
+                df[c] = df[c].clip(-0.2,0.2)
+                df['pred_abs'] = df[c].abs()
+                df['max']=df.groupby('date')['pred_abs'].transform('quantile',0.99)
+                df.loc[df['pred_abs'] > df['max'], c] = np.sign(df.loc[df['pred_abs'] > df['max'], c]) * df.loc[df[c] > df['max'], 'max']
+
+            def r2_shapeley(df_, c_):
+                return 1 - ((df_['ret'] - df_[c_]) ** 2).sum() / ((df_['ret'] - df['pred_norm']) ** 2).sum()
+
+            res = pd.DataFrame()
+            for c in C:
+                res=res.append(pd.DataFrame(data={'feature':[c],'s':[r2_shapeley(df,c)]}),ignore_index=True)
+            res['s']*=100
+            res=res.sort_values('s').round(5).reset_index(drop=True)
+
+            res.to_latex(self.dir_tables + 'shap.tex', escape=True)
+
+            self.paper.append_table_to_sec(table_name='shap.tex', sec_name=par.name, sub_dir=par.name, position='b',
+                                           caption='The table above show the importance of feature measure as and R^2 loss when the columns is set to zero.')
+
+

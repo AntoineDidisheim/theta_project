@@ -66,239 +66,83 @@ par.update_model_name()
 
 par.update_model_name()
 par.print_values()
-##################
-# Create trainer
-##################
-# df=Data(par)
-# df.load_final()
 
-# try:
-#     Data(par).load_final()
-# except:
-#     Data(par).pre_process_all()
+
+them = pd.read_csv(f'{par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
+them['date'] = pd.to_datetime(them['date'], format='%Y-%m-%d')
+# them['date'].max()
+# them[['permno']].astype(int).drop_duplicates().to_csv('data/them_id.txt',index=False,header=False)
 #
 
+df = pd.read_csv('data/prc_them.csv')
+df.columns = [x.lower() for x in df.columns]
 
-trainer = Trainer(par)
-
-self = trainer
-
-##################
-# inside trainer
-##################
-
-df = pd.read_pickle(self.res_dir + 'df.p')
-
-
+df['S0'] = df['prc']
+df = df.rename(columns={'gv_key': 'gvkey', 'cfacpr': 'adj', 'vol': 'total_volume', 'shrout': 'shares_outstanding'})
+df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
+df = df.sort_values(['permno', 'date']).reset_index(drop=True)
+df['S0'] = df['S0'].abs()
+df['ret']=pd.to_numeric(df['ret'],errors='coerce')
+df['ret_f'] = df.groupby(['permno'])['ret'].shift(-1)
 
 
-
-
-# for now the return are all normal in the perf report
-ret_type_str = 'R'
-df['pred'] = df['pred_norm'].clip(-0.2,0.2)
-
-df['bench'] = df['bench'].clip(-0.2,0.2)
-
-
-
-
-# if self.par.data.ret == ReturnType.LOG:
-#     ret_type_str = 'log(R)'
-# else:
-#     ret_type_str  ='R'
-
-
-df['error_bench'] = (df['ret'] - df['bench']).abs()
-df['error_pred'] = (df['ret'] - df['pred']).abs()
-df.describe(np.arange(0,1.05,0.05)).round(3)
-
-
-
+ret_list = ['ret_f']
+for T in [19,20,21,22,23]:
+    df['S_T'] = df.groupby(['permno'])['S0'].shift(-T)
+    df['adj_T'] = df.groupby(['permno'])['adj'].shift(-T)
+    df['S_T'] = df['S_T'] * df['adj_T'] / df['adj']
+    df[f'r{T}'] = np.exp(np.log(df['S_T'] / df['S0']))-1
+    ret_list.append(f'r{T}')
 
 
 ##################
-# multiple r2
+# cum ret method
 ##################
-## add marting wagner
-# t=Data(self.par).marting_wagner_return()
-id_key = 'permno'
-mw = Data(self.par).marting_wagner_return()
-try:
-    # if gvkey is main key, add permno to mw
-    pr = Data(self.par).load_all_price()[['permno', 'gvkey']]
-    pr['permno'] = pr['permno'].astype(int)
-    pr = pr.drop_duplicates()
-    mw = mw.merge(pr, how='left')
-    id_key='gvkey'
-except:
-    pass
-# their MW
-them = pd.read_csv('data/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
-them['date'] = pd.to_datetime(them['date'])
-them['permno'] = them['permno'].astype(int)
-mw = mw.merge(them, how='left')
-t=mw[['date',id_key,'MW','mw30']]
-df = df.merge(t, how='left')
-df['mw30'] = df['mw30']/12
-df['mw30'] = df['mw30']*20/30
-# their lower bound
-them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
-
-them['date'] = pd.to_datetime(them['date'])
-them['permno'] = them['permno'].astype(int)
-try:
-    # again add permno if main is gvkey
-    them = them.merge(pr)
-except:
-    pass
-
-t=them[['date',id_key,'glb2_D30','glb3_D30']]
-df = df.merge(t, how='left')
-df['glb2_D30'] = df['glb2_D30'] / 12
-df['glb3_D30'] = df['glb3_D30'] / 12
-# df['glb3_D30'] = df['glb3_D30'] *20/30
-
-# plt.scatter(df['pred'],df['glb3_D30'],color='k',marker='+')
-# plt.xlabel('Our estimation')
-# plt.ylabel('glb3 D30')
-# plt.grid()
-# plt.show()
-#
-# plt.scatter(df['bench'],df['glb3_D30'],color='k',marker='+')
-# plt.xlabel(r'$\theta = 1.0$')
-# plt.ylabel('glb3 D30')
-# plt.grid()
-# plt.show()
+df['log_ret'] = np.log(df['ret'] + 1)
+for h in [19,20,21,22,23]:
+    df[f'h{h}'] = df.groupby('permno')['log_ret'].rolling(h).sum().shift(-h).reset_index()['log_ret']
+    df[f'h{h}'] = np.exp(df[f'h{h}']) - 1
+    ret_list.append(f'h{h}')
 
 
-df['month'] = df['date'].dt.year*100+df['date'].dt.month
+f = them.merge(df)
+f['pred'] = f['glb2_D30']
+# f['ret'] = f['r']
+# f['ret'] = np.exp(f['r'])-1
+
+final = []
+# ff = f.copy()
+for r in ['h20']:
+    # f = ff.copy()
+    f['ret'] = f[r]
+    # print((f['ret']>0.2).mean())
+    #
+    ind = (f['ret'].abs()<=0.2)
+    f=f.loc[ind,:]
+
+    def func(x):
+        return pd.qcut(x, 10, labels=False, duplicates='drop').values
+
+    def av_geom(x):
+        return (np.prod(1 + x) ** (1 / x.shape[0])) - 1
 
 
+    # f['port'] = func(f['pred'])
+    f['port'] = f.groupby('date')['pred'].transform(func)
+    t = f.groupby(['port', 'date'])['ret'].mean().reset_index()
+    p = t.groupby('port')['ret'].apply(av_geom)
+    # p = t.groupby('port')['ret'].median()
+    # p = (1 + p) ** (252/20) - 1
+    x= np.log(1+0.097)/np.log(1+p[0])
 
-try:
-    t=Data(self.par).historical_theta()
-    df = df.merge(t[['date',id_key,'pred']].rename(columns={'pred':'hist_theta'}), how='left')
-    t = Data(self.par).load_all_price(False)
-    t['year'] = t['date'].dt.year
-    df['year'] =  df['date'].dt.year
-    t=t.groupby('year')['ret'].mean().reset_index()
-    t[r'$\bar{MKT}_{t-1}$']=t['ret'].shift()
-    t = t.rename(columns={'ret':r'$\bar{MKT}_{t}$'})
-    overall_average =  Data(self.par).load_all_price()['ret'].mean()
-    df=df.merge(t)
-except:
-    df[r'$\bar{MKT}_{t-1}$'] = np.nan
-    df[r'hist_theta'] = np.nan
-    overall_average = Data(self.par).load_all_price()['ret'].mean()
+    p = (1 + p) ** (12) - 1
+    print(p)
+    p.name = r
+    final.append(p)
 
-try:
-    t = Data(self.par)
-    t.load_final()
-    t.label_df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = (t.p_df['beta_monthly']*t.p_df['mkt-rf'])/100
-    df=df.merge(t.label_df)
-except:
-    df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = np.nan
+final=pd.DataFrame(final).T
+# final['ret_f']=(final['ret_f']+1)**(252/12) -1
+print(final)
 
-def r2(df_,y_bar, name='NNET'):
-    try:
-        if np.sum(pd.isna(y_bar))>0:
-            df_ = df_.loc[~pd.isna(y_bar),:]
-
-        r2_pred = 1 - ((df_['ret'] - df_['pred']) ** 2).sum() / ((df_['ret'] - y_bar) ** 2).sum()
-        r = (pd.Series({name: r2_pred})*100).round(2)
-    except:
-        r = np.nan
-
-    return r
-
-if 'hist_theta' not in df.columns:
-    df['hist_theta']=np.nan
-if '$\\bar{MKT}_{t}$' not in df.columns:
-    df['$\\bar{MKT}_{t}$']=np.nan
-df.describe(np.arange(0,1.05,0.05))
-ind = (df['ret']>=-0.5) & (df['ret']<=0.5)
-df = df.loc[ind,:]
-def get_all_r(df):
-    r=[
-        r2(df,(1.06)**(1/12)-1,r'6\% premium'),
-        r2(df,df['MW'],'Martin Wagner'),
-        r2(df,df['mw30'],'Martin Wagner downloaded'),
-        r2(df,0.0, r'$R=0.0$'),
-        r2(df, df['hist_theta'],r'historical $\theta$'),
-        r2(df, df['bench'],r'$\theta=1.0$'),
-        r2(df, df[r'$\bar{MKT}_{t}$'],r'$\bar{MKT}_{t}$'),
-        r2(df, df[r'$\bar{MKT}_{t-1}$'],r'$\bar{MKT}_{t-1}$'),
-        r2(df, overall_average,r'$\bar{MKT}$'),
-        r2(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
-        r2(df, df[r'glb2_D30'],r'Vilkny glb2 D30'),
-        r2(df, df[r'glb3_D30'],r'Vilkny glb3 D30')
-    ]
-    return pd.concat(r).sort_values()
-
-df['year'] = df['date'].dt.year
-
-t=df.groupby('year').apply(lambda x: get_all_r(x)).reset_index()
-t.columns = ['Year', 'Type', r'$R^2$']
-t = t.pivot(columns='Year', index='Type')
-t['All'] = get_all_r(df)
-t = t.sort_values('All')
-tt = df.groupby('year')['date'].count()
-tt['All'] = df.shape[0]
-t = t.T
-t['nb. obs'] = tt.values
-t = t.T
-print(t)
-
-
-
-plt.scatter(df['glb2_D30'], df['pred'],color='k',marker='+')
-plt.xlabel('Vilknoy')
-plt.ylabel('NNET pred')
+final.plot()
 plt.show()
-
-
-plt.scatter(df['theta'], df['pred'],color='k',marker='+')
-plt.xlabel('theta')
-plt.ylabel('NNET pred')
-plt.show()
-
-df[['glb2_D30','pred']].quantile(np.arange(0.001,1,0.001)).plot()
-plt.xlabel('Percentile')
-plt.ylabel('Return')
-plt.show()
-
-df['year'] = df['date'].dt.year
-temp =df.loc[df['year']==2018,:]
-temp[['glb2_D30','pred']].quantile(np.arange(0.001,1,0.001)).plot()
-plt.xlabel('Percentile')
-plt.ylabel('Return')
-plt.show()
-
-df.groupby('year')['theta'].mean()
-
-
-df = df.sort_values(['permno','date']).reset_index(drop=True)
-df['theta_l'] = df.groupby('permno')['theta'].shift(-1)
-df['one'] = 1.0
-temp = df[['date','permno','one','theta','theta_l']].dropna()
-temp['theta_m']=temp.groupby('permno')['theta'].transform('mean')
-temp['year'] = temp['date'].dt.year
-temp['month'] = temp['date'].dt.year*100 + temp['date'].dt.month
-temp['theta_y']=temp.groupby('year')['theta'].transform('mean')
-temp['theta_ym']=temp.groupby(['year','permno'])['theta'].transform('mean')
-temp['theta_mm']=temp.groupby(['month','permno'])['theta'].transform('mean')
-
-r2_score(temp['theta'],temp['theta_m'])
-r2_score(temp['theta'],temp['theta_y'])
-r2_score(temp['theta'],temp['theta_ym'])
-r2_score(temp['theta'],temp['theta_mm'])
-r2_score(temp['theta'],temp['theta_l'])
-
-temp['theta_ym'].hist(bins=100)
-plt.show()
-
-
-sm.OLS(temp['theta'],temp[['theta_l','one']]).fit().summary2()
-
-

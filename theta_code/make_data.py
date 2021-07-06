@@ -16,8 +16,8 @@ par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MAE
 par.data.opt_smooth = OptSmooth.VOLA_CUBIC
-par.data.comp = False
-par.data.crsp = False
+par.data.comp = True
+par.data.crsp = True
 par.data.ret = ReturnType.RET
 par.data.min_opt_per_day = 2
 par.data.mw =True
@@ -52,7 +52,7 @@ self = Data(par)
 #     else:
 #         self.load_pred_crsp_only(reload=True)
 #
-# self.historical_theta(reload=True)
+# # self.historical_theta(reload=True)
 
 
 #

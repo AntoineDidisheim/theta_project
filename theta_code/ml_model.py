@@ -55,6 +55,18 @@ class NetworkTheta:
         mse = np.mean((p - y[:,0]) ** 2)
         return r2, theta, mse, p_log, p_norm
 
+    def shapeley_oos(self):
+        d=self.data.test_label_df.copy()
+        for c in self.data.test_p_df.columns:
+            print('shapeley', c,flush=True)
+            p = self.data.test_p_df.copy()
+            p[c] = 0.0
+            X = [p.values, self.data.test_m_df.values]
+            pred = self.model.predict(X)
+            p_norm = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
+            d[c] = p_norm
+        return d
+
     def get_perf_oos_normal_ret(self):
         X = [self.data.test_p_df.values, self.data.test_m_df.values]
         y = self.data.test_label_df[['normal_ret']].values
