@@ -181,6 +181,15 @@ class Data:
         if self.par.data.var_subset is not None:
             self.p_df=self.p_df.loc[:,self.par.data.var_subset]
 
+        if self.par.data.mw & self.par.data.noise_mw_them:
+            t=pd.read_pickle(self.par.data.dir+'MW_THEM_err_ts.p')
+            self.p_df.head()
+            self.p_df.shape
+            C = ['m_e_mean_20', 'm_e_std_20', 'm_e_mean_60', 'm_e_std_60', 'v_e_mean_20', 'v_e_std_20', 'v_e_mean_60', 'v_e_std_60']
+            tt=self.label_df.merge(t[['permno', 'date']+C].drop_duplicates(),how='left')
+            for c in C:
+                self.p_df[c] = tt[c].values
+
 
 
         # add the transofrmed return

@@ -40,6 +40,7 @@ par.model.batch_size = 32
 par.model.dropout = 0.0
 # par.model.output_range = 1.2
 par.model.output_range = 5.0
+par.model.out_min = -3.0
 par.model.E = 5
 par.data.val_split = 0.1
 par.model.loss = Loss.MAE
@@ -51,10 +52,22 @@ par.data.min_opt_per_day = 2
 par.data.mw =True
 par.update_model_name()
 
+par.data.var_subset = ['MW', 'them', 'theta_v']
+par.data.noise_mw_them = True
+
+
 par.data.min_ret = -10000000000000
 par.data.max_ret = +10000000000000
 
-self = Data(par)
+if par.data.comp:
+    par.name_detail = 'rf_fix'
+    par.model.tex_dir = 'tex/rf_fix'
+else:
+    par.name_detail = 'rf_fix_opt_only'
+    par.model.tex_dir = 'tex/rf_fix_opt_only'
+
+par.update_model_name()
+par.print_values()
 
 
 if par.data.comp:
@@ -70,14 +83,6 @@ par.print_values()
 ##################
 # Create trainer
 ##################
-# df=Data(par)
-# df.load_final()
-
-# try:
-#     Data(par).load_final()
-# except:
-#     Data(par).pre_process_all()
-#
 
 
 trainer = Trainer(par)

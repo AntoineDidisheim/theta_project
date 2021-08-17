@@ -119,6 +119,7 @@ class DataParams:
 
         self.ret = ReturnType.LOG
         self.var_subset = None
+        self.noise_mw_them =True
 
 
 

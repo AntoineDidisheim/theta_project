@@ -3,14 +3,14 @@ from parameters import  *
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import os
 
-N=100
-p = 0.65
-w = 2
-def u(x):
-    return np.log(x+w)
+d='res/opt_only64L64_32_16_Lr001Dropout00BS32ActswishOutRange50CVYEAR_BY_YEARLossMAERetRETd2OptCompCrspVOLA_CUBIC/'
+os.listdir(d)
+df = pd.read_pickle(d+'df_sh.p')
+t = pd.read_pickle(d+'df.p')
+df['year'] = df['date'].dt.year
+df.groupby('year')['theta'].std().round(3)
 
-u_trade=(p*u(1)+(1-p)*u(-1))
-u_no_trade = u(0)
 
-u_trade-u_no_trade
+df['theta']

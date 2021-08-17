@@ -706,13 +706,18 @@ class Trainer:
                 df.loc[df['pred_abs'] > df['max'], c] = np.sign(df.loc[df['pred_abs'] > df['max'], c]) * df.loc[df[c] > df['max'], 'max']
 
             def r2_shapeley(df_, c_):
-                return 1 - ((df_['ret'] - df_[c_]) ** 2).sum() / ((df_['ret'] - df['pred_norm']) ** 2).sum()
+                # return 1 - ((df_['ret'] - df_[c_]) ** 2).sum() / ((df_['ret'] - df['pred_norm']) ** 2).sum()
+                r1 = 1 - ((df_['ret'] - df_[c_]) ** 2).sum() / ((df_['ret'] - 0.0) ** 2).sum()
+                r2 = 1 - ((df_['ret'] - df_['pred_norm']) ** 2).sum() / ((df_['ret'] - 0.0) ** 2).sum()
+                return r1-r2
+
 
             res = pd.DataFrame()
             for c in C:
                 res=res.append(pd.DataFrame(data={'feature':[c],'s':[r2_shapeley(df,c)]}),ignore_index=True)
             res['s']*=100
             res=res.sort_values('s').round(5).reset_index(drop=True)
+            print(res)
 
             res.to_latex(self.dir_tables + 'shap.tex', escape=True)
 

@@ -59,3 +59,7 @@ self = Data(par)
 for i in range(5):
     print(i)
     self.create_a_dataset_batch(i, batch_size=25000)
+
+
+
+
