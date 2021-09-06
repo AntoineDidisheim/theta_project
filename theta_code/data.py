@@ -183,12 +183,12 @@ class Data:
 
         if self.par.data.mw & self.par.data.noise_mw_them:
             t=pd.read_pickle(self.par.data.dir+'MW_THEM_err_ts.p')
-            self.p_df.head()
-            self.p_df.shape
             C = ['m_e_mean_20', 'm_e_std_20', 'm_e_mean_60', 'm_e_std_60', 'v_e_mean_20', 'v_e_std_20', 'v_e_mean_60', 'v_e_std_60']
+            # C = ['m_e_mean_20', 'm_e_std_20', 'm_e_Q10_T20', 'm_e_Q25_T20', 'm_e_Q50_T20', 'm_e_Q75_T20', 'm_e_Q90_T20', 'm_e_mean_60', 'm_e_std_60', 'm_e_Q10_T60', 'm_e_Q25_T60', 'm_e_Q50_T60', 'm_e_Q75_T60', 'm_e_Q90_T60', 'v_e_mean_20', 'v_e_std_20', 'v_e_Q10_T20', 'v_e_Q25_T20', 'v_e_Q50_T20', 'v_e_Q75_T20', 'v_e_Q90_T20', 'v_e_mean_60', 'v_e_std_60', 'v_e_Q10_T60', 'v_e_Q25_T60', 'v_e_Q50_T60', 'v_e_Q75_T60', 'v_e_Q90_T60']
             tt=self.label_df.merge(t[['permno', 'date']+C].drop_duplicates(),how='left')
             for c in C:
                 self.p_df[c] = tt[c].values
+
 
 
 
@@ -935,6 +935,11 @@ class Data:
             df['ret'] = pd.to_numeric(df['ret'], errors='coerce')
             df = df.loc[~pd.isna(df['ret']), :]
             df = df.sort_values(['permno', 'date']).reset_index(drop=True)
+
+            # df[['permno', 'date']].drop_duplicates().shape[0] - df.shape[0]
+            ind = df[['permno', 'date']].duplicated(keep='first')
+            df=df.loc[~ind,:]
+
             ## We compute here the returns for various horizon h
             # in crsp returns at time t are buying t-1, selling t
             # here we do buying t, selling t+h
@@ -965,6 +970,7 @@ class Data:
             df = df[['permno', 'ticker', 'date', 'shrout', 'bid', 'ask', 'vol'] + ret_col].rename(columns={'shrout': 'shares_outstanding', 'ret1': 'ret_1', 'ret1m': 'ret', 'vol': 'total_volume'})
             df['S'] = (df['bid'] + df['ask']) / 2
             df['S0'] = (df['bid'] + df['ask']) / 2
+
 
             df.to_pickle(self.par.data.dir + f'{self.name}/int/price.p')
         else:

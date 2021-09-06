@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 # copy necessary data on the daint server
-#scp -r data/grids kermit@130.223.173.241:fast_option_pricing/fop_code/data/
-scp -r data/real kermit@130.223.173.241:fast_option_pricing/fop_code/data/real
+#scp -r data/grids kermit@130.223.171.234:fast_option_pricing/fop_code/data/
+scp -r data/real kermit@130.223.171.234:fast_option_pricing/fop_code/data/real

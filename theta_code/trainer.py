@@ -49,6 +49,7 @@ class Trainer:
 
     def cv_training(self):
         model = NetworkTheta(self.par)
+
         res = []
         res_shapeley = []
         if self.par.model.cv in [CrossValidation.YEAR_BY_YEAR]:
@@ -57,7 +58,22 @@ class Trainer:
             r_ = np.sort(model.data.label_df['date'].dt.year.unique())[1:].tolist()
         if self.par.model.cv == CrossValidation.RANDOM:
             r_ = range(10)
-        print('THE RANGE', r_)
+
+        try:
+            df = pd.read_pickle(self.res_dir + 'df.p')
+            df_sh = pd.read_pickle(self.res_dir + 'df_sh.p')
+            YY=df['date'].dt.year.unique()
+            for Y in YY:
+                if Y in r_:
+                    r_.remove(Y)
+            print('Finishing from loaded, THE RANGE', r_)
+        except:
+            df = pd.DataFrame()
+            df_sh = pd.DataFrame()
+            print('Starting from scratch, THE RANGE', r_)
+
+
+
         for i in r_:
             try:
                 if self.par.model.cv in [CrossValidation.YEAR_BY_YEAR, CrossValidation.EXPANDING]:
@@ -88,8 +104,10 @@ class Trainer:
                 print('#'*50)
                 print('save year', r_)
                 print('#'*50)
-                pd.concat(res).to_pickle(self.res_dir + 'df.p')
-                pd.concat(res_shapeley).to_pickle(self.res_dir + 'df_sh.p')
+                df.append(pd.concat(res),ignore_index=True).to_pickle(self.res_dir + 'df.p')
+                df_sh.append(pd.concat(res_shapeley),ignore_index=True).to_pickle(self.res_dir + 'df_sh.p')
+                # pd.concat(res).to_pickle(self.res_dir + 'df.p')
+                # pd.concat(res_shapeley).to_pickle(self.res_dir + 'df_sh.p')
             except:
                 print('skip', i)
 
@@ -146,20 +164,6 @@ class Trainer:
 
 
 
-        # if self.par.data.ret == ReturnType.LOG:
-        #     ret_type_str = 'log(R)'
-        # else:
-        #     ret_type_str  ='R'
-
-
-        df['error_bench'] = (df['ret'] - df['bench']).abs()
-        df['error_pred'] = (df['ret'] - df['pred']).abs()
-        df.describe(np.arange(0,1.05,0.05)).round(3)
-
-
-
-
-
         ##################
         # multiple r2
         ##################
@@ -167,15 +171,15 @@ class Trainer:
         # t=Data(self.par).marting_wagner_return()
         id_key = 'permno'
         mw = Data(self.par).marting_wagner_return()
-        try:
-            # if gvkey is main key, add permno to mw
-            pr = Data(self.par).load_all_price()[['permno', 'gvkey']]
-            pr['permno'] = pr['permno'].astype(int)
-            pr = pr.drop_duplicates()
-            mw = mw.merge(pr, how='left')
-            id_key='gvkey'
-        except:
-            pass
+        # try:
+        #     # if gvkey is main key, add permno to mw
+        #     pr = Data(self.par).load_all_price()[['permno', 'gvkey']]
+        #     pr['permno'] = pr['permno'].astype(int)
+        #     pr = pr.drop_duplicates()
+        #     mw = mw.merge(pr, how='left')
+        #     id_key='gvkey'
+        # except:
+        #     pass
         # their MW
         them = pd.read_csv('data/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
         them['date'] = pd.to_datetime(them['date'])
@@ -190,11 +194,11 @@ class Trainer:
 
         them['date'] = pd.to_datetime(them['date'])
         them['permno'] = them['permno'].astype(int)
-        try:
-            # again add permno if main is gvkey
-            them = them.merge(pr)
-        except:
-            pass
+        # try:
+        #     # again add permno if main is gvkey
+        #     them = them.merge(pr)
+        # except:
+        #     pass
 
         t=them[['date',id_key,'glb2_D30','glb3_D30']]
         df = df.merge(t, how='left')
@@ -202,13 +206,7 @@ class Trainer:
         df['glb3_D30'] = df['glb3_D30'] / 12
         # df['glb3_D30'] = df['glb3_D30'] *20/30
 
-
-
-
-
         df['month'] = df['date'].dt.year*100+df['date'].dt.month
-
-
 
         try:
             t=Data(self.par).historical_theta()
@@ -226,13 +224,13 @@ class Trainer:
             df[r'hist_theta'] = np.nan
             overall_average = Data(self.par).load_all_price()['ret'].mean()
 
-        try:
-            t = Data(self.par)
-            t.load_final()
-            t.label_df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = (t.p_df['beta_monthly']*t.p_df['mkt-rf'])/100
-            df=df.merge(t.label_df)
-        except:
-            df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = np.nan
+        # try:
+        #     t = Data(self.par)
+        #     t.load_final()
+        #     t.label_df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = (t.p_df['beta_monthly']*t.p_df['mkt-rf'])/100
+        #     df=df.merge(t.label_df)
+        # except:
+        #     df[r'$\beta_{i,t} \bar{MKT}_{t}$'] = np.nan
 
 
 
@@ -241,16 +239,15 @@ class Trainer:
         if '$\\bar{MKT}_{t}$' not in df.columns:
             df['$\\bar{MKT}_{t}$']=np.nan
         df.describe(np.arange(0,1.05,0.05))
+
+        #### CUT EXTREME (still...)
         ind = (df['ret']>=-0.5) & (df['ret']<=0.5)
         df = df.loc[ind,:]
-
-
 
         def r2(df_,y_bar, name='NNET'):
             try:
                 if np.sum(pd.isna(y_bar))>0:
                     df_ = df_.loc[~pd.isna(y_bar),:]
-
                 r2_pred = 1 - ((df_['ret'] - df_['pred']) ** 2).sum() / ((df_['ret'] - y_bar) ** 2).sum()
                 r = (pd.Series({name: r2_pred})*100).round(2)
             except:
@@ -267,7 +264,7 @@ class Trainer:
                 r2(df, df[r'$\bar{MKT}_{t}$'],r'$\bar{MKT}_{t}$'),
                 r2(df, df[r'$\bar{MKT}_{t-1}$'],r'$\bar{MKT}_{t-1}$'),
                 r2(df, overall_average,r'$\bar{MKT}$'),
-                r2(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
+                # r2(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
                 r2(df, df[r'glb2_D30'],r'Vilkny glb2 D30'),
                 r2(df, df[r'glb3_D30'],r'Vilkny glb3 D30')
             ]
@@ -294,7 +291,7 @@ class Trainer:
                 r2_abs(df, df[r'$\bar{MKT}_{t}$'],r'$\bar{MKT}_{t}$'),
                 r2_abs(df, df[r'$\bar{MKT}_{t-1}$'],r'$\bar{MKT}_{t-1}$'),
                 r2_abs(df, overall_average,r'$\bar{MKT}$'),
-                r2_abs(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
+                # r2_abs(df, df[r'$\beta_{i,t} \bar{MKT}_{t}$'],r'$\beta_{i,t} \bar{MKT}_{t}$'),
                 r2_abs(df, df[r'glb2_D30'],r'Vilkny glb2 D30'),
                 r2_abs(df, df[r'glb3_D30'],r'Vilkny glb3 D30')
             ]
@@ -344,6 +341,7 @@ class Trainer:
         # t['nb. obs'] = tt.values
         # t = t.T
 
+
         t.to_latex(self.dir_tables+'all_r2.tex', escape=False)
         self.paper.append_table_to_sec(table_name='all_r2.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
                                        caption='The table below shows the out of sample $L_2 R^2$ of our model against various benchmark')
@@ -351,6 +349,31 @@ class Trainer:
         t_abs.to_latex(self.dir_tables+'all_r2_ABS.tex', escape=False)
         self.paper.append_table_to_sec(table_name='all_r2_ABS.tex', resize=0.95, sec_name=par.name, sub_dir=par.name,
                                        caption='The table below shows the out of sample $L_1 R^2$ of our model against various benchmark')
+
+
+
+        #### ad the plot with vilknoy's perf
+        # col = 'mw30'
+        def temp_r2(df_,col='glb2_D30'):
+            temp = df_[['year', 'ret', col]].dropna().copy()
+            r2_pred = 1 - ((temp['ret'] - temp[col]) ** 2).sum() / ((temp['ret'] - 0.0) ** 2).sum()
+            return r2_pred
+        vilk = df.groupby('year').apply(temp_r2)
+        us = df.groupby('year').apply(lambda x: temp_r2(df_=x,col='pred'))
+        plt.plot(vilk.index, vilk.values * 100, color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0],label=f'Yearly $R^2$ (vilknoy)')
+        plt.plot(us.index, us.values * 100, color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1],label=f'Yearly $R^2$, (us)')
+        plt.hlines(temp_r2(df) * 100,xmin=np.min(vilk.index),xmax=np.max(vilk.index), color=didi.DidiPlot.COLOR[2], linestyle=didi.DidiPlot.LINE_STYLE[2],label=fr'Overall $R^2$ (vilknoy, {np.round(temp_r2(df) * 100,3)})')
+        plt.grid(True)
+        plt.legend()
+        plt.ylabel(r'$R^2$ (%)')
+        plt.xlabel('Year')
+        plt.tight_layout()
+        plt.savefig(self.dir_figs + 'R2_VILK_v0.png')
+        plt.show()
+        self.plt_show()
+
+        self.paper.append_fig_to_sec(fig_names="R2_VILK_v0", sec_name=par.name, sub_dir=par.name,
+                                     main_caption=fr"The figure above shows out of sample $R^2$ multiplied by 100 of Vilkny benchmark against a constant 0.0 prediciton")
 
 
 
