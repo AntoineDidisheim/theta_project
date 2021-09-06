@@ -21,7 +21,6 @@ class NetworkMean:
         self.par = par
         self.model = None
         self.data = Data(par)
-        self.data.load_internally()
         self.create_network()
 
         self.save_dir = 'model_save/' + self.par.name + '/'
