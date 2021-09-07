@@ -4,7 +4,7 @@ from parameters import *
 from trainer import Trainer
 from data import  Data
 par = Params()
-par.data.cs_sample = CSSAMPLE.FULL
+par.data.cs_sample = CSSAMPLE.VILK
 # par.model.layers = [100,100,100]
 
 data = Data(par)
