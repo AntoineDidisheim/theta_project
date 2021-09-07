@@ -45,15 +45,21 @@ class NetworkMean:
 
 
     def shapeley_oos(self):
+        def r2(df_,col='pred'):
+            r2_pred = 1 - ((df_['ret1m'] - df_[col]) ** 2).sum() / ((df_['ret1m'] - 0) ** 2).sum()
+            return r2_pred
+
         d=self.data.test_label_df.copy()
-        for c in self.data.test_p_df.columns:
-            print('shapeley', c,flush=True)
-            p = self.data.test_p_df.copy()
-            p[c] = 0.0
-            X = [p.values, self.data.test_m_df.values]
-            pred = self.model.predict(X)
-            p_norm = tf.map_fn(fn=Econ.g_apply_ret, elems=pred)
-            d[c] = p_norm
+        X = self.data.test_x_df.copy()
+        d['pred']=self.model.predict(X)
+        basic=r2(d)
+        R = {}
+        for c in self.data.test_x_df.columns:
+            X = self.data.test_x_df.copy()
+            X[c] = 0.0
+            d[c] = self.model.predict(X)
+            R[c] = r2(d,c)
+            print('shapeley', c,R[c]/basic,flush=True)
         return d
 
     def create_network(self):
@@ -100,10 +106,10 @@ class NetworkMean:
         print('#'*50,flush=True)
         self.data.set_year_test(year)
         self._train_year(year)
+        shapeley = self.shapeley_oos()
         df=self._get_perf_oos()
-        df.to_pickle(self.res_dir+f'{year}.p')
-
-
+        df.to_pickle(self.res_dir+f'perf_{year}.p')
+        shapeley.to_pickle(self.res_dir+f'shap_{year}.p')
 
 
     def _train_year(self, year):

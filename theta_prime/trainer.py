@@ -40,7 +40,7 @@ class Trainer:
         MODEL_LIST=['pred', 'vilk', 'mw']
         m_dict = {'pred':'NNET','vilk':'vilk','mw':'mw'}
 
-        L = os.listdir(self.model.res_dir)
+        L = [x for x in os.listdir(self.model.res_dir) if 'perf_' in x]
         full_df = pd.DataFrame()
         for l in tqdm(L,'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))

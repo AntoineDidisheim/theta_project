@@ -102,7 +102,7 @@ class Data:
             for v in ['mean', 'median']:
                 print('###############',v)
                 df = self.load_all_price()
-                # df = df.head(1000000)
+                df = df.head(1000000)
                 df = df.sort_values(['date', 'permno']).reset_index(drop=True)
                 ## mean ret over last 3 month
                 df.index = df['date']
@@ -133,15 +133,15 @@ class Data:
                     df = df.reset_index(drop=True)
                     df = df.merge(t, how='left')
 
-                    for q in Q:
-                        df.index = df['date']
-                        t = df.groupby('permno')[f'err_{v}'].rolling(T).quantile(q).reset_index()
-                        t[f'err_{v}_Quantile{q}_{T}'] = t.groupby('permno')[f'err_{v}'].shift(1)
-                        pred_col.append(f'err_{v}_Quantile{q}_{T}')
-                        t = t.dropna()
-                        del t[f'err_{v}']
-                        df = df.reset_index(drop=True)
-                        df = df.merge(t, how='left')
+                    # for q in Q:
+                    #     df.index = df['date']
+                    #     t = df.groupby('permno')[f'err_{v}'].rolling(T).quantile(q).reset_index()
+                    #     t[f'err_{v}_Quantile{q}_{T}'] = t.groupby('permno')[f'err_{v}'].shift(1)
+                    #     pred_col.append(f'err_{v}_Quantile{q}_{T}')
+                    #     t = t.dropna()
+                    #     del t[f'err_{v}']
+                    #     df = df.reset_index(drop=True)
+                    #     df = df.merge(t, how='left')
 
                 df = df[['permno','date','ticker','ret1m']+pred_col]
                 df = df.dropna()
