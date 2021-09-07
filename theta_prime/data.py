@@ -21,7 +21,7 @@ class Data:
             df = pd.read_pickle(f'{self.par.data.dir}bench/mw_daily.p')
 
         return df
-    def load_vilknoy(self,reload=True):
+    def load_vilknoy(self,reload=False):
         if reload:
             them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
             them['date']=pd.to_datetime(them['date'])
@@ -43,6 +43,7 @@ class Data:
     def load_all_price(self, reload=False):
         if reload:
             # Minimum columns: ['PERMNO','CUSIP','TICKER', 'date', 'PRC', 'RET', 'CFACPR']
+            # df = pd.read_csv(self.par.data.dir + '/raw/crsp_all.csv',nrows=100000)
             df = pd.read_csv(self.par.data.dir + '/raw/crsp_all.csv')
             df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
             df.columns = [x.lower() for x in df.columns]
@@ -88,6 +89,7 @@ class Data:
                 # remove random skip in days
                 df.loc[tt > tt.quantile(0.99), f'ret{h_name}'] = np.nan
                 df[f'H{h_name}'] = tt
+            df.round(4)
 
             df = df[['permno', 'ticker', 'date','prc'] + ret_col].rename(columns={'shrout': 'shares_outstanding'})
             df.to_pickle(self.par.data.dir + f'raw_merge/price.p')
@@ -204,7 +206,7 @@ class Data:
 
 self = Data(Params())
 # self.load_all_price(True)
-self.load_pred_feature(True)
-self.load_vilknoy(True)
-self.load_mw(True)
-self.load_additional_crsp(True)
+# self.load_pred_feature(True)
+# self.load_vilknoy(True)
+# self.load_mw(True)
+# self.load_additional_crsp(True)

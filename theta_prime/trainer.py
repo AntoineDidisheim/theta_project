@@ -13,6 +13,7 @@ import os
 from tqdm import tqdm
 import seaborn as sns
 from scipy.stats import pearsonr
+import shutil
 
 par = Params()
 
@@ -24,15 +25,18 @@ class Trainer:
 
     def launch_training_expanding_window(self):
         self.model.data.load_internally()
-        YEAR = range(1980,2020)
+        YEAR = range(1996,2020)
         for year in YEAR:
             self.model.run_year(year)
 
     def create_paper(self):
         # define the paper maine directory (can be relative or abolute path)
-        paper = didi.LatexPaper(dir_=self.par.model.tex_dir+'/'+self.par.model.tex_name)
+        f_dir = self.par.model.tex_dir+'/'+str(self.par.name)+'/'
+        if os.path.exists(f_dir):
+            shutil.rmtree(f_dir)
+        paper = didi.LatexPaper(dir_= f_dir)
         # Creating the paper itself with a given title, author name and some default sections (non-mandatory)
-        paper.create_paper('theta_prime', title="KSS: Keep it Simple Stupid", author="Antoine Didisheim", sec=['Introduction','Results'])
+        paper.create_paper(self.par.model.tex_name, title="KiSS: Keep it Simple Stupid", author="Antoine Didisheim", sec=['Introduction','Results'])
         MODEL_LIST=['pred', 'vilk', 'mw']
         m_dict = {'pred':'NNET','vilk':'vilk','mw':'mw'}
 
@@ -58,7 +62,10 @@ class Trainer:
         R = []
         for y in tqdm(YEAR,'compute R^2 expanding'):
             ind = df['date'].dt.year <= y
-            r = {'year': y, 'NNET': r2(df.loc[ind, :]), 'vilk': r2(df.loc[ind, :], 'vilk'), 'mw': r2(df.loc[ind, :], 'mw')}
+            r = {'year':y}
+            for c in MODEL_LIST:
+                r[c] = r2(df.loc[ind, :], c)
+
             R.append(r)
         res = pd.DataFrame(R)
         res.index = res['year']
@@ -73,7 +80,7 @@ class Trainer:
         plt.ylabel(r'Cummulative $R^2$')
         plt.legend()
         plt.tight_layout()
-        plt.savefig(paper.dir_figs + 'cumulative_r2_r2.png')
+        plt.savefig(paper.dir_figs + 'cumulative_r2.png')
         self.plt_show()
 
         # year per year
@@ -153,7 +160,6 @@ class Trainer:
         ##################
         # correlation of perf
         ##################
-        c=t.corr()
 
         def corrfunc(x, y, ax=None, **kws):
             """Plot the correlation coefficient in the top left hand corner of a plot."""
@@ -168,7 +174,7 @@ class Trainer:
         self.plt_show()
 
 
-        paper.append_fig_to_sec(fig_names=['corr_firms'], sec_name='Results',
+        paper.append_fig_to_sec(fig_names=['corr_firms'], sec_name='Results', size = "80mm",
                                 main_caption=r"The figures illustrate the correlation between each models firm by firm $R^2$")
 
 
@@ -189,7 +195,7 @@ class Trainer:
         self.plt_show()
 
 
-        paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results',
+        paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results', size = "80mm",
                                 main_caption=r"The figures illustrate the correlation between each models month by month $R^2$")
 
     def plt_show(self):
@@ -198,5 +204,5 @@ class Trainer:
 
 
 
-self = Trainer()
-self.create_paper()
+# self = Trainer()
+# self.create_paper()
