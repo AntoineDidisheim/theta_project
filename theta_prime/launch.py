@@ -3,6 +3,12 @@ import pandas as pd
 from parameters import *
 from trainer import Trainer
 from data import  Data
+import socket
+
+if 'nv-' in socket.gethostname():
+    import matplotlib
+    matplotlib.use('Agg')
+
 par = Params()
 par.data.cs_sample = CSSAMPLE.FULL
 # par.model.layers = [100,100,100]
