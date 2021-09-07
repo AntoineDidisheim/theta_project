@@ -8,5 +8,5 @@ par.data.cs_sample = CSSAMPLE.VILK
 
 # train
 trainer = Trainer(par)
-# trainer.launch_training_expanding_window()
+trainer.launch_training_expanding_window()
 trainer.create_paper()
