@@ -109,6 +109,7 @@ class NetworkMean:
         df=self._get_perf_oos()
         df.to_pickle(self.res_dir+f'perf_{year}.p')
         print(df.head())
+        print(df['pred'].std())
         # shapeley = self.shapeley_oos()
         # shapeley.to_pickle(self.res_dir+f'shap_{year}.p')
 
