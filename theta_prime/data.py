@@ -190,7 +190,7 @@ class Data:
 
 
 self = Data(Params())
-self.load_pred_feature(reload=True)
+self.load_all_price(True)
 self.load_pred_feature(True)
 self.load_vilknoy(True)
 self.load_mw(True)
