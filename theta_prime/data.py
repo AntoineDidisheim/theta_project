@@ -102,7 +102,7 @@ class Data:
             for v in ['mean', 'median']:
                 print('###############',v)
                 df = self.load_all_price()
-                df = df.head(1000000)
+                # df = df.head(1000000)
                 df = df.sort_values(['date', 'permno']).reset_index(drop=True)
                 ## mean ret over last 3 month
                 df.index = df['date']
@@ -124,8 +124,8 @@ class Data:
                     print(T)
                     df.index = df['date']
                     t = df.groupby('permno')[f'err_{v}'].rolling(T).agg(['mean', 'std']).reset_index()
-                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(1)
-                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(1)
+                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(10)
+                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(10)
                     pred_col.append(f'err_{v}_mean_{T}')
                     pred_col.append(f'err_{v}_std_{T}')
                     t = t.dropna()

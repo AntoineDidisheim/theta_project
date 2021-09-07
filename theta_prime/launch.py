@@ -2,9 +2,14 @@ import numpy as np
 import pandas as pd
 from parameters import *
 from trainer import Trainer
-
+from data import  Data
 par = Params()
 par.data.cs_sample = CSSAMPLE.VILK
+
+
+data = Data(par)
+data.load_all_price(True)
+data.load_pred_feature(True)
 
 # train
 trainer = Trainer(par)
