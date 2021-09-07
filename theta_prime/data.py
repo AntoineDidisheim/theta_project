@@ -42,6 +42,7 @@ class Data:
 
     def load_all_price(self, reload=False):
         if reload:
+            print('start pre-process price')
             # Minimum columns: ['PERMNO','CUSIP','TICKER', 'date', 'PRC', 'RET', 'CFACPR']
             # df = pd.read_csv(self.par.data.dir + '/raw/crsp_all.csv',nrows=100000)
             df = pd.read_csv(self.par.data.dir + '/raw/crsp_all.csv')
@@ -89,16 +90,18 @@ class Data:
                 # remove random skip in days
                 df.loc[tt > tt.quantile(0.99), f'ret{h_name}'] = np.nan
                 df[f'H{h_name}'] = tt
-            df.round(4)
+
 
             df = df[['permno', 'ticker', 'date','prc'] + ret_col].rename(columns={'shrout': 'shares_outstanding'})
             df.to_pickle(self.par.data.dir + f'raw_merge/price.p')
+            print('finish')
         else:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/price.p')
         return df
 
     def load_pred_feature(self, reload = False):
         if reload:
+            print('####################', 'start pred feature pr-processing')
             for v in ['mean', 'median']:
                 print('###############',v)
                 df = self.load_all_price()
@@ -118,14 +121,14 @@ class Data:
                 TT = [20, 180, 252]
                 Q = [0.25,0.75]
                 pred_col = []
-                df[f'err_{v}'] = (df['pred'] - df['ret1m']) ** 2
+                df[f'err_{v}'] = (df['pred'] - df['ret1m_old']) ** 2
                 pred_col.append('pred')
                 for T in TT:
                     print(T)
                     df.index = df['date']
                     t = df.groupby('permno')[f'err_{v}'].rolling(T).agg(['mean', 'std']).reset_index()
-                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(10)
-                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(10)
+                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(1)
+                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(1)
                     pred_col.append(f'err_{v}_mean_{T}')
                     pred_col.append(f'err_{v}_std_{T}')
                     t = t.dropna()
