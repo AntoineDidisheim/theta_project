@@ -25,7 +25,7 @@ class Trainer:
 
     def launch_training_expanding_window(self):
         self.model.data.load_internally()
-        YEAR = range(1996,2020)
+        YEAR = range(1999,2020)
         for year in YEAR:
             self.model.run_year(year)
 
