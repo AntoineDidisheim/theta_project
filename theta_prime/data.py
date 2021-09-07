@@ -2,11 +2,25 @@ import pandas as pd
 import numpy as np
 from parameters import *
 import didipack as didi
-
+import os
 class Data:
     def __init__(self, par = Params()):
         self.par = par
 
+
+    def load_mw(self,reload=True):
+        if reload:
+            os.listdir(f'{self.par.data.dir}bench/')
+            df = pd.read_csv(f'{self.par.data.dir}bench/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
+            df['date']=pd.to_datetime(df['date'])
+            df=df[['date','permno','mw30']].rename(columns={'mw30':'mw'})
+            df['permno'] = df['permno'].astype(int)
+            df['mw']/=12
+            df.to_pickle(f'{self.par.data.dir}bench/mw_daily.p')
+        else:
+            df = pd.read_pickle(f'{self.par.data.dir}bench/mw_daily.p')
+
+        return df
     def load_vilknoy(self,reload=True):
         if reload:
             them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
@@ -88,47 +102,45 @@ class Data:
             ## mean ret over last 3 month
             df.index = df['date']
             v = 'ret1m_old'
-            t = df.groupby('permno')[v].rolling(252).median().reset_index().rename(columns={v: 'pred'})
-            print(df)
+            t = df.groupby('permno')[v].rolling(252).aggregate(['mean','median']).reset_index().rename(columns={v: 'pred'})
             print(t)
             df = df.reset_index(drop=True)
             df = df.merge(t, how='left')
 
-            ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df['pred']))
+            ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df['mean']))& (~pd.isna(df['median']))
             df = df.loc[ind, :]
             df = df.reset_index(drop=True)
 
-            df['err'] = (df['pred'] - df['ret1m']) ** 2
-            df.groupby('date')['err'].mean().plot()
-
-            def r2(df_):
-                r2_pred = 1 - ((df_['ret1m'] - df_['pred']) ** 2).sum() / ((df_['ret1m'] - 0) ** 2).sum()
-                return r2_pred
-
-            try:
-                t = pd.read_csv('data/permno_old.txt', header=None)
-                ind = df['permno'].isin(t[0])
-                ind.mean()
-                print('r2_is', r2(df.loc[ind, :]))
-            except:
-                print('no permno_all to load')
-            print('r2_overall', r2(df.loc[:, :]))
-
-
             TT = [20, 180, 252]
-            pred_col = ['pred']
-            for T in TT:
-                print(T)
-                df.index = df['date']
-                t = df.groupby('permno')['err'].rolling(T).agg(['mean', 'std']).reset_index()
-                t[f'err_mean_{T}'] = t.groupby('permno')['mean'].shift(1)
-                t[f'err_std_{T}'] = t.groupby('permno')['std'].shift(1)
-                pred_col.append(f'err_mean_{T}')
-                pred_col.append(f'err_std_{T}')
-                t = t.dropna()
-                del t['mean'], t['std']
-                df = df.reset_index(drop=True)
-                df = df.merge(t, how='left')
+            Q = [0.25,0.75]
+            pred_col = []
+
+            for v in ['mean','median']:
+                print('###############',v)
+                df[f'err_{v}'] = (df[v] - df['ret1m']) ** 2
+                pred_col.append(v)
+                for T in TT:
+                    print(T)
+                    df.index = df['date']
+                    t = df.groupby('permno')[f'err_{v}'].rolling(T).agg(['mean', 'std']).reset_index()
+                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(1)
+                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(1)
+                    pred_col.append(f'err_{v}_mean_{T}')
+                    pred_col.append(f'err_{v}_std_{T}')
+                    t = t.dropna()
+                    del t['mean'], t['std']
+                    df = df.reset_index(drop=True)
+                    df = df.merge(t, how='left')
+
+                    for q in Q:
+                        df.index = df['date']
+                        t = df.groupby('permno')[f'err_{v}'].rolling(T).quantile(q).reset_index()
+                        t[f'err_{v}_Quantile{q}_{T}'] = t.groupby('permno')[f'err_{v}'].shift(1)
+                        pred_col.append(f'err_{v}_Quantile{q}_{T}')
+                        t = t.dropna()
+                        del t[f'err_{v}']
+                        df = df.reset_index(drop=True)
+                        df = df.merge(t, how='left')
 
             df = df[['permno','date','ticker','ret1m']+pred_col]
             print(df)
@@ -137,6 +149,18 @@ class Data:
             df.to_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
         else:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+        return df
+
+    def load_additional_crsp(self,reload=False):
+        if reload:
+            df = pd.read_csv(self.par.data.dir + '/raw/crsp_add.csv')
+            df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
+            df.columns = [x.lower() for x in df.columns]
+            df['mkt_cap'] = df['prc']*df['shrout']
+            df=df[['date','permno','mkt_cap']]
+            df.to_pickle(self.par.data.dir+'/raw_merge/crsp_add.p')
+        else:
+            df = pd.read_pickle(self.par.data.dir+'/raw_merge/crsp_add.p')
         return df
 
     def load_internally(self):
@@ -166,5 +190,5 @@ class Data:
 
 
 self = Data(Params())
-# self.load_pred_feature(reload=True)
-# self.load_pred_feature(True)
+self.load_pred_feature(reload=True)
+self.load_pred_feature(True)

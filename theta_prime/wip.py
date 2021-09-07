@@ -12,10 +12,12 @@ par = Params()
 # Data(par).load_pred_feature(True)
 
 model = NetworkMean(par)
-model.data.load_all_price(True)
-model.data.load_pred_feature(True)
+# model.data.load_all_price(True)
+# model.data.load_pred_feature(True)
 YEAR=np.sort(model.data.label_df['date'].dt.year.unique())[3:]
 YEAR = range(2015,2020)
 for year in YEAR:
     model.run_year(year)
+
+
 
