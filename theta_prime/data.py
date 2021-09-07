@@ -100,24 +100,24 @@ class Data:
             for v in ['mean', 'median']:
                 print('###############',v)
                 df = self.load_all_price()
+                # df = df.head(1000000)
                 df = df.sort_values(['date', 'permno']).reset_index(drop=True)
                 ## mean ret over last 3 month
                 df.index = df['date']
-                v = 'ret1m_old'
-                t = df.groupby('permno')[v].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
+                t = df.groupby('permno')['ret1m_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
                 print(t)
                 df = df.reset_index(drop=True)
                 df = df.merge(t, how='left')
 
-                ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df[v]))
+                ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df['pred']))
                 df = df.loc[ind, :]
                 df = df.reset_index(drop=True)
 
                 TT = [20, 180, 252]
                 Q = [0.25,0.75]
                 pred_col = []
-                df[f'err_{v}'] = (df[v] - df['ret1m']) ** 2
-                pred_col.append(v)
+                df[f'err_{v}'] = (df['pred'] - df['ret1m']) ** 2
+                pred_col.append('pred')
                 for T in TT:
                     print(T)
                     df.index = df['date']
@@ -142,9 +142,9 @@ class Data:
                         df = df.merge(t, how='left')
 
                 df = df[['permno','date','ticker','ret1m']+pred_col]
-                print(df)
                 df = df.dropna()
-                print(df)
+                df = df.rename(columns={'pred':v+'_pred'})
+                print(df.head())
                 df.to_pickle(self.par.data.dir + f'raw_merge/price_feature_{v}.p')
             print('####### start merge')
             del df

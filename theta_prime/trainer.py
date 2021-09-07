@@ -19,8 +19,7 @@ par = Params()
 class Trainer:
     def __init__(self, par = Params()):
         self.par = par
-        # TODO remove after debug
-        self.par.name = 'defaultL64_32_16_Lr001Dropout001BS512ActreluOutRange05LossMSERetLOGd3OptCompCrspEXT'
+        # self.par.name = 'defaultL64_32_16_Lr001Dropout001BS512ActreluOutRange05LossMSERetLOGd3OptCompCrspEXT'
         self.model = NetworkMean(self.par)
 
     def launch_training_expanding_window(self):
@@ -75,7 +74,7 @@ class Trainer:
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'cumulative_r2_r2.png')
-        plt.show()
+        self.plt_show()
 
         # year per year
         df['year'] = df['date'].dt.year
@@ -88,7 +87,7 @@ class Trainer:
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'year_r2.png')
-        plt.show()
+        self.plt_show()
 
         # We now add two figure side by side
         paper.append_fig_to_sec(fig_names=['cumulative_r2', 'year_r2'], sec_name='Results',
@@ -110,14 +109,14 @@ class Trainer:
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'hist_stock_r2.png')
-        plt.show()
+        self.plt_show()
 
         # boxplot
         t = pd.DataFrame(S).T
         t.boxplot()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'box_stock_r2.png')
-        plt.show()
+        self.plt_show()
 
         paper.append_fig_to_sec(fig_names=['hist_stock_r2', 'box_stock_r2'], sec_name='Results',
                                 main_caption=r"The figures compare the $R^2$ firm by firm of each model with histograms (a) and boxplots (b)")
@@ -139,12 +138,12 @@ class Trainer:
 
         sns.violinplot(data=violin, x='Market cap. Quintile', y=r'$R^2$ per firm', hue='model', palette='muted')
         plt.savefig(paper.dir_figs + 'SIZE_violin_stock_r2.png')
-        plt.show()
+        self.plt_show()
 
         sns.boxplot(data=violin, x='Market cap. Quintile', y=r'$R^2$ per firm', hue='model', palette='muted')
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'SIZE_box_stock_r2.png')
-        plt.show()
+        self.plt_show()
 
         paper.append_fig_to_sec(fig_names=['SIZE_violin_stock_r2', 'SIZE_box_stock_r2'], sec_name='Results',
                                 main_caption=r"The figures compare the $R^2$ firm by firm sorted by market cap. size of each model with violin plots (a) and boxplots (b). "
@@ -161,31 +160,43 @@ class Trainer:
             r, _ = pearsonr(x, y)
             ax = ax or plt.gca()
             ax.annotate(f'ρ = {r:.2f}', xy=(.1, .9), xycoords=ax.transAxes)
-        sns.pairplot(t)
-        plt.show()
 
-
-        plt.scatter(t['vilk'], t['NNET'], color='k', marker='+')
-        plt.xlabel('vilknoy firm $R^2$')
-        plt.ylabel('NNET firm $R^2$')
-        plt.grid()
+        g = sns.pairplot(t)
+        g.map_lower(corrfunc)
         plt.tight_layout()
-        plt.savefig(fig_save_dir + 'corr_frim_r2.png')
-        plt.show()
+        plt.savefig(paper.dir_figs + 'corr_firms.png')
+        self.plt_show()
 
-        df['mse_nnet'] = (df['pred'] - df['ret1m']) ** 2
-        df['mse_vilk'] = (df['vilk'] - df['ret1m']) ** 2
-        df['ym'] = df_['date'].dt.year * 100 + df['date'].dt.month
 
-        tt = df.groupby(['ym', 'permno'])[['mse_nnet', 'mse_vilk']].mean()
-        plt.scatter(tt['mse_vilk'], tt['mse_nnet'], color='k', marker='+')
-        plt.xlabel('vilknoy firm MSE')
-        plt.ylabel('NNET firm MSE')
-        plt.grid()
+        paper.append_fig_to_sec(fig_names=['corr_firms'], sec_name='Results',
+                                main_caption=r"The figures illustrate the correlation between each models firm by firm $R^2$")
+
+
+        df['ym'] = df['date'].dt.year * 100 + df['date'].dt.month
+
+        ym_r2 =[]
+        for v in MODEL_LIST:
+            tt = df.groupby(['ym']).apply(lambda x: r2(x,v))
+            tt.name = m_dict[v]
+            ym_r2.append(tt)
+        ym_r2=pd.DataFrame(ym_r2).T
+        g = sns.pairplot(ym_r2)
+        g.map_lower(corrfunc)
+        
         plt.tight_layout()
-        plt.savefig(fig_save_dir + 'corr_firm_month_MSE.png')
-        plt.show()
+        plt.savefig(paper.dir_figs + 'corr_month.png')
+        
+        self.plt_show()
+
+
+        paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results',
+                                main_caption=r"The figures illustrate the correlation between each models month by month $R^2$")
+
+    def plt_show(self):
+        plt.close()
+
 
 
 
 self = Trainer()
+self.create_paper()
