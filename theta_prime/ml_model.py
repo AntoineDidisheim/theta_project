@@ -73,6 +73,9 @@ class NetworkMean:
                 print(i, l)
                 dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64)
                 L.append(dense)
+                if self.par.model.dropout >0:
+                    L.append(tf.keras.layers.Dropout(rate=self.par.model.dropout, seed=12345))
+
 
         def final_act(x):
             return tf.nn.tanh(x)*self.par.model.output_range
