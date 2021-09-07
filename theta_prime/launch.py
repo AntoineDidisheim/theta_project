@@ -4,12 +4,12 @@ from parameters import *
 from trainer import Trainer
 from data import  Data
 par = Params()
-par.data.cs_sample = CSSAMPLE.VILK
+par.data.cs_sample = CSSAMPLE.FULL
 # par.model.layers = [100,100,100]
 par.model.dropout = 0.1
 data = Data(par)
 # data.load_all_price(True)
-# data.load_pred_feature(True)
+data.load_pred_feature(True)
 
 # train
 trainer = Trainer(par)
