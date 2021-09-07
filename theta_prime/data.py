@@ -191,7 +191,7 @@ class Data:
     def set_year_test(self, year):
         test_id = np.array(list(self.label_df.index[self.label_df['date'].dt.year == year]))
         np.random.shuffle(test_id)
-        train_id = np.array(list(self.label_df.index[self.label_df['date'].dt.year < year]))
+        train_id = np.array(list(self.label_df.index[self.label_df['date'].dt.year < year-1]))
         np.random.shuffle(train_id)
 
         self.test_label_df = self.label_df.iloc[test_id, :].reset_index(drop=True)

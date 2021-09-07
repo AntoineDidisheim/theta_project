@@ -106,9 +106,9 @@ class NetworkMean:
         print('#'*50,flush=True)
         self.data.set_year_test(year)
         self._train_year(year)
-        shapeley = self.shapeley_oos()
         df=self._get_perf_oos()
         df.to_pickle(self.res_dir+f'perf_{year}.p')
+        shapeley = self.shapeley_oos()
         shapeley.to_pickle(self.res_dir+f'shap_{year}.p')
 
 
