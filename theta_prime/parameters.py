@@ -36,27 +36,16 @@ class Loss(Enum):
     MSE = 1
     MAE = 2
 
-
-
-class ReturnType(Enum):
-    LOG = 1
-    RET = 2
-
-
-class CrossValidation(Enum):
-    RANDOM = 1
-    YEAR_BY_YEAR = 2
-    EXPANDING = 3
+class CSSAMPLE(Enum):
+    FULL = 1
+    VILK = 2
 
 
 
 
 
-class OptSmooth(Enum):
-    EXT = 1
-    INT = 2
-    EXT_CUBIC = 3
-    VOLA_CUBIC = 4
+
+
 
 
 ##################
@@ -81,10 +70,9 @@ class ParamsModels:
         self.learning_rate = 0.01
         self.dropout = 0.01
         self.output_range = 0.5
-        self.tex_dir = 'tex_res'
-        self.tex_name = 'theta'
 
-        self.bench_theta = 0.5
+        self.tex_dir = 'tex_res'
+        self.tex_name = 'theta_prime'
 
 
 
@@ -97,30 +85,12 @@ class DataParams:
 
         else:
             self.dir = 'data/'
-        self.max_opt = 323
         self.val_split = 0.01
 
-        self.opt_smooth = OptSmooth.EXT
-
-
-        self.pred_as_input = False
-        self.crsp = True
-        self.comp =True
-        self.opt = True
-        self.mw = False
-        self.vilk_theta = True
-        self.hist_theta = True
-        self.last_friday = False
-        self.min_opt_per_day = 3
-
-        self.max_ret = 0.2
-        self.min_ret = -0.2
-        # self.max_ret = 200000
-        # self.min_ret = -200000
-
-        self.ret = ReturnType.LOG
+        self.max_ret_in_training = None
         self.var_subset = None
-        self.noise_mw_them =True
+        self.cs_sample = CSSAMPLE.FULL
+
 
 
 
@@ -137,6 +107,8 @@ class Params:
 
     def update_model_name(self):
         n = self.name_detail
+
+        ## architecture name
         L = 'L'
         for l in self.model.layers:
             L += str(l) + '_'
@@ -148,23 +120,14 @@ class Params:
         n += 'OutRange' + str(self.model.output_range)
         n += 'Loss' + str(self.model.loss.name)
 
-        n+='Ret'+str(self.data.ret.name)
-        n+=f'd{self.data.min_opt_per_day}'
-        if self.data.opt:
-            n+='Opt'
-        if self.data.comp:
-            n+='Comp'
-        if self.data.crsp:
-            n+='Crsp'
-        if self.data.mw:
-            self.name += 'MW'
-        if self.data.last_friday:
-            self.name += 'LF'
+        ## data name
+        if self.data.var_subset is not None:
+            n+= 'Vsubset'+str(len(self.data.var_subset))
+        if self.data.max_ret_in_training is not None:
+            n+= 'Mret'+str(self.data.max_ret_in_training)
 
-        if self.data.pred_as_input:
-            self.name += 'PredAsinput'
+        n+='Cssample'+str(self.data.cs_sample.name)
 
-        n+=str(self.data.opt_smooth.name)
         n = n.replace('.','')
         self.name = n
 

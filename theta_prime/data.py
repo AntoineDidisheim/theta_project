@@ -8,7 +8,7 @@ class Data:
         self.par = par
 
 
-    def load_mw(self,reload=True):
+    def load_mw(self,reload=False):
         if reload:
             os.listdir(f'{self.par.data.dir}bench/')
             df = pd.read_csv(f'{self.par.data.dir}bench/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
@@ -97,26 +97,25 @@ class Data:
 
     def load_pred_feature(self, reload = False):
         if reload:
-            df = self.load_all_price()
-            df = df.sort_values(['date', 'permno']).reset_index(drop=True)
-            ## mean ret over last 3 month
-            df.index = df['date']
-            v = 'ret1m_old'
-            t = df.groupby('permno')[v].rolling(252).aggregate(['mean','median']).reset_index().rename(columns={v: 'pred'})
-            print(t)
-            df = df.reset_index(drop=True)
-            df = df.merge(t, how='left')
-
-            ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df['mean']))& (~pd.isna(df['median']))
-            df = df.loc[ind, :]
-            df = df.reset_index(drop=True)
-
-            TT = [20, 180, 252]
-            Q = [0.25,0.75]
-            pred_col = []
-
-            for v in ['mean','median']:
+            for v in ['mean', 'median']:
                 print('###############',v)
+                df = self.load_all_price()
+                df = df.sort_values(['date', 'permno']).reset_index(drop=True)
+                ## mean ret over last 3 month
+                df.index = df['date']
+                v = 'ret1m_old'
+                t = df.groupby('permno')[v].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
+                print(t)
+                df = df.reset_index(drop=True)
+                df = df.merge(t, how='left')
+
+                ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df[v]))
+                df = df.loc[ind, :]
+                df = df.reset_index(drop=True)
+
+                TT = [20, 180, 252]
+                Q = [0.25,0.75]
+                pred_col = []
                 df[f'err_{v}'] = (df[v] - df['ret1m']) ** 2
                 pred_col.append(v)
                 for T in TT:
@@ -142,11 +141,18 @@ class Data:
                         df = df.reset_index(drop=True)
                         df = df.merge(t, how='left')
 
-            df = df[['permno','date','ticker','ret1m']+pred_col]
-            print(df)
-            df = df.dropna()
-            print(df)
+                df = df[['permno','date','ticker','ret1m']+pred_col]
+                print(df)
+                df = df.dropna()
+                print(df)
+                df.to_pickle(self.par.data.dir + f'raw_merge/price_feature_{v}.p')
+            print('####### start merge')
+            del df
+            v_1 = 'mean'
+            v_2 = 'median'
+            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}.p'))
             df.to_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+
         else:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
         return df
@@ -165,6 +171,13 @@ class Data:
 
     def load_internally(self):
         df = self.load_pred_feature()
+        if self.par.data.cs_sample==CSSAMPLE.VILK:
+            v = self.load_vilknoy()
+            df=df.merge(v[['permno','date']])
+        if self.par.data.var_subset is not None:
+            col = list(df.columns[:4])+self.par.data.var_subset
+            df = df[col]
+
         df = df.dropna().reset_index(drop=True)
         self.label_df = df.iloc[:,:4]
         self.x_df = df.iloc[:,4:]
@@ -190,7 +203,7 @@ class Data:
 
 
 self = Data(Params())
-self.load_all_price(True)
+# self.load_all_price(True)
 self.load_pred_feature(True)
 self.load_vilknoy(True)
 self.load_mw(True)
