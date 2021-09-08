@@ -159,7 +159,11 @@ class Data:
             df.to_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
 
         else:
-            df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+            # df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+            print('start merge')
+            v_1 = 'mean'
+            v_2 = 'median'
+            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}.p'))
         return df
 
     def load_additional_crsp(self,reload=False):
