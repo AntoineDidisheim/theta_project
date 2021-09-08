@@ -192,7 +192,8 @@ class Data:
         self.x_df = df.iloc[:,4:]
 
         for c in self.x_df.columns:
-            self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
+            # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
+            self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
 
 
     def set_year_test(self, year):
