@@ -12,12 +12,14 @@ if 'nv-' in socket.gethostname():
 par = Params()
 par.data.cs_sample = CSSAMPLE.FULL
 # par.model.layers = [100,100,100]
-par.model.dropout = 0.1
+par.model.dropout = 0.2
+par.model.learning_rate = 0.005
 data = Data(par)
 # data.load_all_price(True)
-data.load_pred_feature(True)
+# data.load_pred_feature(True)
 
 # train
 trainer = Trainer(par)
-trainer.launch_training_expanding_window()
+self = trainer
+# trainer.launch_training_expanding_window()
 trainer.create_paper()
