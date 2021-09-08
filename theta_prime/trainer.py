@@ -25,6 +25,9 @@ class Trainer:
 
     def launch_training_expanding_window(self):
         self.model.data.load_internally()
+        print('DATA example')
+        print(self.model.data.x_df.head())
+        print(self.model.data.x_df.describe())
         YEAR = range(2000,2020)
         for year in YEAR:
             self.model.run_year(year)
