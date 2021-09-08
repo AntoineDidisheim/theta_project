@@ -12,8 +12,8 @@ if 'nv-' in socket.gethostname():
 par = Params()
 par.data.cs_sample = CSSAMPLE.VILK
 # par.model.layers = [100,100,100]
-par.model.dropout = 0.2
-par.model.learning_rate = 0.005
+par.model.dropout = 0.0
+par.model.learning_rate = 0.001
 
 par.update_model_name()
 
