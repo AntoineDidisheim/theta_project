@@ -225,6 +225,65 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results', size = "80mm",
                                 main_caption=r"The figures illustrate the correlation between each models month by month $R^2$")
 
+
+        # ### add the new section with the
+        # paper.append_text_to_sec('Results',r'\n \n \clearpage \n \n')
+        # paper.create_new_sec('subsample_analysis')
+        # paper.append_text_to_sec('subsample_analysis',r'\section{Subsample Analysis}')
+
+
+        comp=self.model.data.load_compustat(True)
+        comp_col=list(comp.columns[2:])
+        df['year'] = df['date'].dt.year
+        final = df.merge(comp)
+
+        def get_expanding_r2(temp):
+            R = []
+            for y in tqdm(YEAR, 'compute R^2 expanding'):
+                ind = temp['date'].dt.year <= y
+                r = {'year': y}
+                for c in MODEL_LIST:
+                    r[c] = r2(temp.loc[ind, :], c)
+                R.append(r)
+            res = pd.DataFrame(R)
+            res.index = res['year']
+            del res['year']
+            return res
+
+        def plot_expanding_r2(res):
+            # cummulative r2 plots
+            d = pd.to_datetime(res.index, format='%Y')
+            for i, c in enumerate(MODEL_LIST):
+                plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+            plt.grid()
+            plt.xlabel('Year')
+            plt.ylabel(r'Cummulative $R^2$')
+            plt.ylim(-0.02,0.03)
+            plt.legend()
+            plt.tight_layout()
+
+
+
+        for col in comp_col:
+            print('#########',col)
+            final['q'] = pd.qcut(final[col],q=3,labels=False,duplicates='drop')
+            low=get_expanding_r2(final.loc[final['q']==0,:].copy())
+            high = get_expanding_r2(final.loc[final['q'] == 2, :].copy())
+
+            plot_expanding_r2(low)
+            plt.savefig(paper.dir_figs + f'{col}_low.png')
+            self.plt_show()
+
+            plot_expanding_r2(high)
+            plt.savefig(paper.dir_figs + f'{col}_high.png')
+            self.plt_show()
+
+            paper.append_fig_to_sec(fig_names=[f'{col}_low', f'{col}_high'],fig_captions=['low','high'], sec_name='Results',
+                                    main_caption=rf"The figures compare the cumulative $R^2$ of the models splitting by {col}. "
+                                                 rf"Panel (a) shows the lowest third {col}, while panel (b) shows the highest {col}.")
+
+
+
     def plt_show(self):
         plt.close()
 

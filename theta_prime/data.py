@@ -99,6 +99,22 @@ class Data:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/price.p')
         return df
 
+    def load_compustat(self, reload = False):
+        if reload:
+            df = pd.read_csv(self.par.data.dir + '/raw/compustat.csv')
+            df.columns = [x.lower() for x in df.columns]
+            df['Market Value']=df['prcc_c']*df['csho']
+            df['ROA'] = df['ni']/df['at']
+            df['Net Profit Margin'] = df['ni']/df['sale']
+            df['Price to Earnings'] = df['ni']/df['Market Value']
+            df['Price to Sales'] = df['sale']/df['Market Value']
+            df['Book to Market'] = df['bkvlps']/df['Market Value']
+            df=df[['lpermno','fyear','ROA','Net Profit Margin','Price to Earnings','Price to Sales','Book to Market','Market Value']].rename(columns={'fyear':'year','lpermno':'permno'})
+            df.to_pickle(self.par.data.dir + f'raw_merge/compustat.p')
+        else:
+            df = pd.read_pickle(self.par.data.dir + f'raw_merge/compustat.p')
+        return df
+
     def load_pred_feature(self, reload = False):
         if reload:
             print('####################', 'start pred feature pr-processing')
