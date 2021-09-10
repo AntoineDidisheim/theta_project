@@ -33,7 +33,10 @@ class Trainer:
         print(self.model.data.x_df.describe())
         YEAR = range(1996,2020)
         for year in YEAR:
-            self.model.run_year(year)
+            try:
+                self.model.run_year(year)
+            except:
+                print('skip year',year,flush=True)
 
     def create_paper(self):
         # define the paper maine directory (can be relative or abolute path)
