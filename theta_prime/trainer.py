@@ -14,6 +14,7 @@ from tqdm import tqdm
 import seaborn as sns
 from scipy.stats import pearsonr
 import shutil
+import tensorflow as tf
 
 par = Params()
 
@@ -24,6 +25,8 @@ class Trainer:
         self.model = NetworkMean(self.par)
 
     def launch_training_expanding_window(self):
+        np.random.seed(12345)
+        tf.random.set_seed(12345)
         self.model.data.load_internally()
         print('DATA example')
         print(self.model.data.x_df.head())
