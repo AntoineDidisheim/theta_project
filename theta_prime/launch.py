@@ -26,7 +26,7 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
-par.data.cs_sample = CSSAMPLE.VILK
+par.data.cs_sample = CSSAMPLE.ALL
 # par.model.layers = [100,100,100]
 par.model.dropout = 0.0
 par.model.learning_rate = 0.001
