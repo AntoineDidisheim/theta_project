@@ -34,8 +34,8 @@ par.model.learning_rate = 0.001
 par.update_model_name()
 
 data = Data(par)
-data.load_all_price(True)
-data.load_pred_feature(True)
+# data.load_all_price(True)
+# data.load_pred_feature(True)
 
 # train
 trainer = Trainer(par)
