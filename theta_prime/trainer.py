@@ -28,7 +28,7 @@ class Trainer:
         print('DATA example')
         print(self.model.data.x_df.head())
         print(self.model.data.x_df.describe())
-        YEAR = range(2000,2020)
+        YEAR = range(1996,2020)
         for year in YEAR:
             self.model.run_year(year)
 

@@ -41,5 +41,5 @@ data.load_pred_feature(True)
 trainer = Trainer(par)
 self = trainer
 # trainer.launch_training_expanding_window()
-trainer.create_paper()
+# trainer.create_paper()
 
