@@ -27,7 +27,7 @@ class NetworkMean:
         self.res_dir = 'res/' + self.par.name + '/'
         os.makedirs(self.save_dir,exist_ok=True)
         os.makedirs(self.res_dir,exist_ok=True)
-
+        print('½¼¼¼¼¼¼¼¼¼¼¼¼¼¼¼',self.par.data.H)
         if self.par.data.H == 20:
             name_ret = 'ret1m'
         if self.par.data.H == 120:

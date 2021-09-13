@@ -31,7 +31,8 @@ par.data.cs_sample = CSSAMPLE.FULL
 # par.model.dropout = 0.2
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
-par.data.H = 180
+par.data.H = 120
+
 par.update_model_name()
 
 data = Data(par)
