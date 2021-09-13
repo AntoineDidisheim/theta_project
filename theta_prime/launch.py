@@ -26,11 +26,11 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
-par.data.cs_sample = CSSAMPLE.FULL
+par.data.cs_sample = CSSAMPLE.VILK
 # par.model.layers = [100,100,100]
 par.model.dropout = 0.0
 par.model.learning_rate = 0.001
-par.model.loss = Loss.MAE
+par.model.loss = Loss.MSE
 par.update_model_name()
 
 data = Data(par)
