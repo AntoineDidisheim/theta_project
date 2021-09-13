@@ -64,7 +64,7 @@ class Data:
             # df = pd.DataFrame({'prc':[1,2,3,4,5,6,7,8,9,10]})
             # df['ret']=(df['prc']/df['prc'].shift(1)-1)
             df['log_ret'] = np.log(df['ret'] + 1)
-            H = [1, 20]
+            H = [1, 20,60,120]
             ret_col = []
             H_col = []
             for h in H:
@@ -116,28 +116,35 @@ class Data:
         return df
 
     def load_pred_feature(self, reload = False):
+        target_days = self.par.data.H
+
         if reload:
             print('####################', 'start pred feature pr-processing')
             for v in ['mean', 'median']:
                 print('###############',v)
+                if target_days == 20:
+                    name_ret = 'ret1m'
+                if target_days == 120:
+                    name_ret = 'ret6m'
+
                 df = self.load_all_price()
                 # df = df.head(1000000)
                 df = df.sort_values(['date', 'permno']).reset_index(drop=True)
                 ## mean ret over last 3 month
                 df.index = df['date']
-                t = df.groupby('permno')['ret1m_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
+                t = df.groupby('permno')[f'{name_ret}m_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
                 print(t)
                 df = df.reset_index(drop=True)
                 df = df.merge(t, how='left')
 
-                ind = (~pd.isna(df['ret1m'])) & (~pd.isna(df['pred']))
+                ind = (~pd.isna(df[name_ret])) & (~pd.isna(df['pred']))
                 df = df.loc[ind, :]
                 df = df.reset_index(drop=True)
 
                 TT = [20, 180, 252]
                 Q = [0.25,0.75]
                 pred_col = []
-                df[f'err_{v}'] = (df['pred'] - df['ret1m_old']) ** 2
+                df[f'err_{v}'] = (df['pred'] - df[f'{name_ret}_old']) ** 2
                 pred_col.append('pred')
                 for T in TT:
                     print(T)
@@ -162,24 +169,24 @@ class Data:
                         df = df.reset_index(drop=True)
                         df = df.merge(t, how='left')
 
-                df = df[['permno','date','ticker','ret1m']+pred_col]
+                df = df[['permno','date','ticker',name_ret]+pred_col]
                 df = df.dropna()
                 df = df.rename(columns={'pred':v+'_pred'})
                 print(df.head())
-                df.to_pickle(self.par.data.dir + f'raw_merge/price_feature_{v}.p')
+                df.to_pickle(self.par.data.dir + f'raw_merge/price_feature_{v}_H{target_days}.p')
             print('####### start merge')
             del df
             v_1 = 'mean'
             v_2 = 'median'
-            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}.p'))
-            df.to_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
+            # df.to_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
 
         else:
             # df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
             print('start merge')
             v_1 = 'mean'
             v_2 = 'median'
-            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}.p'))
+            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
         return df
 
     def load_additional_crsp(self,reload=False):
@@ -195,7 +202,15 @@ class Data:
         return df
 
     def load_internally(self):
-        df = self.load_pred_feature()
+        try:
+            df = self.load_pred_feature()
+        except:
+            print('Feature not pre-processed, starting now with prices:')
+            self.load_all_price(True)
+            print('Start now with the features')
+            df=self.load_pred_feature(True)
+
+
         if self.par.data.cs_sample==CSSAMPLE.VILK:
             v = self.load_vilknoy()
             df=df.merge(v[['permno','date']])

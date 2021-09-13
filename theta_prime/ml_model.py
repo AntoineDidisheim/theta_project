@@ -28,6 +28,12 @@ class NetworkMean:
         os.makedirs(self.save_dir,exist_ok=True)
         os.makedirs(self.res_dir,exist_ok=True)
 
+        if self.par.data.H == 20:
+            name_ret = 'ret1m'
+        if self.par.data.H == 120:
+            name_ret = 'ret6m'
+        self.name_ret = name_ret
+
     def _get_perf_oos(self):
         X = self.data.test_x_df
         pred = self.model.predict(X)
@@ -36,8 +42,9 @@ class NetworkMean:
         v=self.data.load_vilknoy()
         df = df.merge(v,how='left')
 
+        name_ret = self.name_ret
         def r2(df_,col='pred'):
-            r2_pred = 1 - ((df_['ret1m'] - df_[col]) ** 2).sum() / ((df_['ret1m'] - 0) ** 2).sum()
+            r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0) ** 2).sum()
             return r2_pred
 
         print('us overall', r2(df),'us on vilk',r2(df.dropna()), 'vilk perf',r2(df.dropna(),'vilk'))
@@ -45,8 +52,9 @@ class NetworkMean:
 
 
     def shapeley_oos(self):
+        name_ret = self.name_ret
         def r2(df_,col='pred'):
-            r2_pred = 1 - ((df_['ret1m'] - df_[col]) ** 2).sum() / ((df_['ret1m'] - 0) ** 2).sum()
+            r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0) ** 2).sum()
             return r2_pred
 
         d=self.data.test_label_df.copy()
@@ -124,7 +132,7 @@ class NetworkMean:
     def _train_year(self, year):
 
         X = self.data.train_x_df
-        y = self.data.train_label_df[['ret1m']].values
+        y = self.data.train_label_df[[self.name_ret]].values
         save_this_one = self.save_dir + f'{year}/'
         if not os.path.exists(save_this_one):
             os.makedirs(save_this_one)

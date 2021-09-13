@@ -24,6 +24,12 @@ class Trainer:
         # self.par.name = 'defaultL64_32_16_Lr001Dropout001BS512ActreluOutRange05LossMSERetLOGd3OptCompCrspEXT'
         self.model = NetworkMean(self.par)
 
+        if self.par.data.H == 20:
+            name_ret = 'ret1m'
+        if self.par.data.H == 120:
+            name_ret = 'ret6m'
+        self.name_ret = name_ret
+
     def launch_training_expanding_window(self):
         np.random.seed(12345)
         tf.random.set_seed(12345)
@@ -58,8 +64,9 @@ class Trainer:
         mw = self.model.data.load_mw()
         full_df = full_df.merge(mw,how='left')
 
+        name_ret = self.name_ret
         def r2(df_, col='pred'):
-            r2_pred = 1 - ((df_['ret1m'] - df_[col]) ** 2).sum() / ((df_['ret1m'] - 0.0) ** 2).sum()
+            r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             return r2_pred
 
 

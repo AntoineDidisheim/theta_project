@@ -91,6 +91,7 @@ class DataParams:
         self.max_ret_in_training = None
         self.var_subset = None
         self.cs_sample = CSSAMPLE.FULL
+        self.H = 20
 
 
 
@@ -122,6 +123,9 @@ class Params:
         if self.model.output_pos_only:
             n+='p'
         n += 'Loss' + str(self.model.loss.name)
+
+        if self.data.H!=20:
+            n+= f'H{self.data.H}'
 
         ## data name
         if self.data.var_subset is not None:

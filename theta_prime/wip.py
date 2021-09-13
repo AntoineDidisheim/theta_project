@@ -9,15 +9,21 @@ from data import Data
 from matplotlib import pyplot as plt
 from ml_model import NetworkMean
 par = Params()
-# Data(par).load_pred_feature(True)
+data=Data(par)
 
-model = NetworkMean(par)
-# model.data.load_all_price(True)
-# model.data.load_pred_feature(True)
-YEAR=np.sort(model.data.label_df['date'].dt.year.unique())[3:]
-YEAR = range(2015,2020)
-for year in YEAR:
-    model.run_year(year)
+df=data.load_vilknoy().merge(data.load_mw())
+df=df.merge(data.load_all_price())
+
+
+
+def r2(df_, col='vilk'):
+    r2_pred = 1 - ((df_['ret1m'] - df_[col]) ** 2).sum() / ((df_['ret1m'] - df_['mw']) ** 2).sum()
+    return r2_pred*100
+
+# df['mw'] = df['mw'].fillna(0)
+ind = df['date'].dt.year>=2000
+r2(df.loc[ind,:])
+r2(df.loc[:,:])
 
 
 
