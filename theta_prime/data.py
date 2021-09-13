@@ -10,12 +10,19 @@ class Data:
 
     def load_mw(self,reload=False):
         if reload:
-            os.listdir(f'{self.par.data.dir}bench/')
             df = pd.read_csv(f'{self.par.data.dir}bench/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
             df['date']=pd.to_datetime(df['date'])
-            df=df[['date','permno','mw30']].rename(columns={'mw30':'mw'})
             df['permno'] = df['permno'].astype(int)
-            df['mw']/=12
+            if self.par.data.H == 20:
+                df = df[['date', 'permno', 'mw30']].rename(columns={'mw30': 'mw'})
+                df['mw'] /= 12
+            if self.par.data.H == 60:
+                df = df[['date', 'permno', 'mw91']].rename(columns={'mw91': 'mw'})
+                df['mw'] /= 4
+            if self.par.data.H == 120:
+                df = df[['date', 'permno', 'mw182']].rename(columns={'mw182': 'mw'})
+                df['mw'] /= 2
+
             df.to_pickle(f'{self.par.data.dir}bench/mw_daily.p')
         else:
             df = pd.read_pickle(f'{self.par.data.dir}bench/mw_daily.p')
@@ -25,11 +32,18 @@ class Data:
         if reload:
             them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
             them['date']=pd.to_datetime(them['date'])
-            them=them[['date','permno','glb2_D30']].rename(columns={'glb2_D30':'vilk'})
-            them['vilk']/=12
-            them.to_pickle(f'{self.par.data.dir}bench/glb_daily.p')
+            if self.par.data.H == 20:
+                them=them[['date','permno','glb2_D30']].rename(columns={'glb2_D30':'vilk'})
+                them['vilk']/=12
+            if self.par.data.H == 60:
+                them=them[['date','permno','glb2_D91']].rename(columns={'glb2_D91':'vilk'})
+                them['vilk']/=4
+            if self.par.data.H == 120:
+                them=them[['date','permno','glb2_D182']].rename(columns={'glb2_D182':'vilk'})
+                them['vilk']/=2
+            them.to_pickle(f'{self.par.data.dir}bench/glb_daily_{self.par.data.H}.p')
         else:
-            them = pd.read_pickle(f'{self.par.data.dir}bench/glb_daily.p')
+            them = pd.read_pickle(f'{self.par.data.dir}bench/glb_daily_{self.par.data.H}.p')
 
         return them
 
@@ -210,6 +224,10 @@ class Data:
             print('Start now with the features')
             df=self.load_pred_feature(True)
 
+            print('finish with vilk and mw')
+            self.load_mw(True)
+            self.load_vilknoy(True)
+
 
         if self.par.data.cs_sample==CSSAMPLE.VILK:
             v = self.load_vilknoy()
@@ -246,6 +264,6 @@ class Data:
 self = Data(Params())
 # self.load_all_price(True)
 # self.load_pred_feature(True)
-# self.load_vilknoy(True)
-# self.load_mw(True)
+self.load_vilknoy(True)
+self.load_mw(True)
 # self.load_additional_crsp(True)
