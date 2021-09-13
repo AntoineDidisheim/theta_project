@@ -143,8 +143,8 @@ class Data:
                     print(T)
                     df.index = df['date']
                     t = df.groupby('permno')[f'err_{v}'].rolling(T).agg(['mean', 'std']).reset_index()
-                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(1)
-                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(1)
+                    t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean']#.shift(1)
+                    t[f'err_{v}_std_{T}'] = t.groupby('permno')['std']#.shift(1)
                     pred_col.append(f'err_{v}_mean_{T}')
                     pred_col.append(f'err_{v}_std_{T}')
                     t = t.dropna()
@@ -208,8 +208,8 @@ class Data:
         self.x_df = df.iloc[:,4:]
 
         for c in self.x_df.columns:
-            # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
-            self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
+            self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
+            # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
 
 
     def set_year_test(self, year):

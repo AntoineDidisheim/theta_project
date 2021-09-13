@@ -77,8 +77,12 @@ class NetworkMean:
                     L.append(tf.keras.layers.Dropout(rate=self.par.model.dropout, seed=12345))
 
 
-        def final_act(x):
-            return tf.nn.tanh(x)*self.par.model.output_range
+        if self.par.model.output_pos_only:
+            def final_act(x):
+                return tf.nn.tanh(x)*self.par.model.output_range
+        else:
+            def final_act(x):
+                return tf.nn.sigmoid(x)*self.par.model.output_range
         self.outputs = layers.Dense(1, activation=final_act, name='final_forecast', dtype=tf.float64)
         L.append(self.outputs)
         model = tf.keras.Sequential(L)

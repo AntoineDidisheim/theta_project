@@ -69,7 +69,8 @@ class ParamsModels:
         self.loss = Loss.MSE
         self.learning_rate = 0.01
         self.dropout = 0.01
-        self.output_range = 0.5
+        self.output_range = 0.1
+        self.output_pos_only =True
 
         self.tex_dir = 'tex_res'
         self.tex_name = 'theta_prime'
@@ -118,6 +119,8 @@ class Params:
         n += 'BS' + str(self.model.batch_size)
         n += 'Act' + str(self.model.activation)
         n += 'OutRange' + str(self.model.output_range)
+        if self.model.output_pos_only:
+            n+='p'
         n += 'Loss' + str(self.model.loss.name)
 
         ## data name
