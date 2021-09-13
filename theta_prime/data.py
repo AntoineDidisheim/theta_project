@@ -146,7 +146,7 @@ class Data:
                 df = df.sort_values(['date', 'permno']).reset_index(drop=True)
                 ## mean ret over last 3 month
                 df.index = df['date']
-                t = df.groupby('permno')[f'{name_ret}m_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
+                t = df.groupby('permno')[f'{name_ret}_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
                 print(t)
                 df = df.reset_index(drop=True)
                 df = df.merge(t, how='left')
