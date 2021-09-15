@@ -27,14 +27,14 @@ if 'nv-' in socket.gethostname():
 
 par = Params()
 par.data.cs_sample = CSSAMPLE.FULL
-par.model.layers = [100,100,100]
-par.model.dropout = 0.2
-par.model.output_range = 0.5
+# par.model.layers = [100,100,100]
+# par.model.dropout = 0.2
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
-par.data.H = 120
+par.data.H = 60
 
 par.update_model_name()
+# par.name = 'defaultL64_32_16_Lr0001Dropout001BS512ActreluOutRange01pLossMSEH120CssampleFULL'
 
 data = Data(par)
 # data.load_all_price(True)
@@ -43,6 +43,6 @@ data = Data(par)
 # train
 trainer = Trainer(par)
 self = trainer
-trainer.launch_training_expanding_window()
+# trainer.launch_training_expanding_window()
 trainer.create_paper()
 

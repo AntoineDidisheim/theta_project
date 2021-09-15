@@ -83,14 +83,16 @@ class Trainer:
         ## add martin wagner
         mw = self.model.data.load_mw()
         full_df = full_df.merge(mw,how='left')
+        full_df = full_df.loc[~pd.isna(full_df['mw']),:]
 
         name_ret = self.name_ret
         def r2(df_, col='pred'):
             if self.par.data.H==20:
                 r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             else:
-                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06**(self.par.data.H/256)-1)) ** 2).sum()
-                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df[name_ret].mean()) ** 2).sum()
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06**(self.par.data.H/256)-1)) ** 2).sum()
+                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df[name_ret].mean()) ** 2).sum()
+                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             return r2_pred
 
         # df[name_ret].mean()
