@@ -52,6 +52,26 @@ class Trainer:
         paper = didi.LatexPaper(dir_= f_dir)
         # Creating the paper itself with a given title, author name and some default sections (non-mandatory)
         paper.create_paper(self.par.model.tex_name, title="KiSS: Keep it Simple Stupid", author="Antoine Didisheim", sec=['Introduction','Results'])
+
+
+        L = "Layer: ("
+        for l in self.par.model.layers:
+            L += str(l) + ','
+        L = L[:-1] + ')'
+        model_description = '\n' + "In this section we present the results where the neural network architecture is defined as, \n \n" \
+                                r"\begin{enumerate}" + '\n' \
+                                rf"\item Learning rate {self.par.model.learning_rate}" + '\n' \
+                                rf"\item Optimizer {self.par.model.opti}" + '\n' \
+                                rf"\item {L}" + '\n' \
+                                rf"\item Loss {self.par.model.loss.name}" + '\n' \
+                                rf"\item Output range {self.par.model.output_range}" + '\n' \
+                                rf"\item Output positive only {self.par.model.output_pos_only}" + '\n' \
+                                rf"\item Batch size {self.par.model.batch_size}" + '\n' \
+                                rf"\item Training data {self.par.data.cs_sample.name}" + '\n' \
+                                rf"\item Forecasting horizon {self.par.data.H}" + '\n'
+
+        paper.append_text_to_sec(sec_name='Introduction', text=model_description.replace('_', ' '))
+
         MODEL_LIST=['pred', 'vilk', 'mw']
         m_dict = {'pred':'NNET','vilk':'vilk','mw':'mw'}
 
@@ -66,9 +86,18 @@ class Trainer:
 
         name_ret = self.name_ret
         def r2(df_, col='pred'):
-            r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
+            if self.par.data.H==20:
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
+            else:
+                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06**(self.par.data.H/256)-1)) ** 2).sum()
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df[name_ret].mean()) ** 2).sum()
             return r2_pred
 
+        # df[name_ret].mean()
+        if self.par.data.H == 20:
+            ADD_TEXT=r' $R^2$ is defined with 0.0 as a denominator benchmark. '
+        else:
+            ADD_TEXT=r' $R^2$ is defined with in sample mean as a denominator benchmark. '
 
         ##################
         # r2 plots
@@ -122,7 +151,7 @@ class Trainer:
         # We now add two figure side by side
         paper.append_fig_to_sec(fig_names=['cumulative_r2', 'year_r2'], sec_name='Results',
                                 fig_captions=['Cumulative', 'Year per year'],  # you can add individual caption to each figure (leave empty for no label)
-                                main_caption=r"The figures above show the $R^2$ of the main models ")
+                                main_caption=r"The figures above show the $R^2$ of the main models. "+ADD_TEXT)
 
 
 
@@ -263,7 +292,7 @@ class Trainer:
             del res['year']
             return res
 
-        def plot_expanding_r2(res):
+        def plot_expanding_r2(res,y_min,y_max):
             # cummulative r2 plots
             d = pd.to_datetime(res.index, format='%Y')
             for i, c in enumerate(MODEL_LIST):
@@ -271,7 +300,7 @@ class Trainer:
             plt.grid()
             plt.xlabel('Year')
             plt.ylabel(r'Cummulative $R^2$')
-            plt.ylim(-0.02,0.03)
+            plt.ylim(y_min,y_max)
             plt.legend()
             plt.tight_layout()
 
@@ -283,11 +312,14 @@ class Trainer:
             low=get_expanding_r2(final.loc[final['q']==0,:].copy())
             high = get_expanding_r2(final.loc[final['q'] == 2, :].copy())
 
-            plot_expanding_r2(low)
+            y_min=min(low.min().min(),high.min().min())*1.1
+            y_max=max(low.max().max(),high.max().max())*1.1
+
+            plot_expanding_r2(low,y_min,y_max)
             plt.savefig(paper.dir_figs + f'{col}_low.png')
             self.plt_show()
 
-            plot_expanding_r2(high)
+            plot_expanding_r2(high,y_min,y_max)
             plt.savefig(paper.dir_figs + f'{col}_high.png')
             self.plt_show()
 
