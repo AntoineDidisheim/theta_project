@@ -43,7 +43,7 @@ class Trainer:
 
         YEAR = range(1996,2020)
 
-        L = [int(x.split('_perf')[0]) for x in os.listdir(self.model.res_dir) if 'perf_' in x]
+        L = [int(x.split('perf_')[1].split('.p')[0]) for x in os.listdir(self.model.res_dir) if 'perf_' in x]
         Y = []
         for y in YEAR:
             if y not in L:
