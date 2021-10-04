@@ -33,8 +33,8 @@ par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
-for H in [120]:
-    par.data.H = 120
+for H in [20, 120]:
+    par.data.H = H
 
     par.update_model_name()
 
