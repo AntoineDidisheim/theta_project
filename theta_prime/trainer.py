@@ -48,6 +48,8 @@ class Trainer:
         for y in YEAR:
             if y not in L:
                 Y.append(y)
+            else:
+                print('already run', y)
         YEAR = Y
         print('Run on years', YEAR)
 
