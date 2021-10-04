@@ -26,16 +26,19 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
+par.name_detail='PostVac'
 par.data.cs_sample = CSSAMPLE.FULL
-# par.model.layers = [100,100,100]
-# par.model.dropout = 0.2
-# par.model.output_range = 0.5
-# par.model.learning_rate = 0.001
+par.model.layers = [100,100,100]
+par.model.dropout = 0.2
+par.model.output_range = 0.5
+par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
 
-for H in [120,20]:
+for H in [20,60,120]:
     par.data.H = H
+    if H>30:
+        par.model.output_range = 0.5
 
     par.update_model_name()
 
@@ -46,6 +49,6 @@ for H in [120,20]:
     # train
     trainer = Trainer(par)
     self = trainer
-    # trainer.launch_training_expanding_window()
+    trainer.launch_training_expanding_window()
     trainer.create_paper()
 

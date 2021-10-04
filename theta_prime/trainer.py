@@ -30,6 +30,8 @@ class Trainer:
             name_ret = 'ret6m'
         self.name_ret = name_ret
 
+
+
     def launch_training_expanding_window(self):
         np.random.seed(12345)
         tf.random.set_seed(12345)
