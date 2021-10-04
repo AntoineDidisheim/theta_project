@@ -3,7 +3,7 @@ import time
 from pandarallel import pandarallel
 import math
 import numpy as np
-from parameters import  *
+from parameters import *
 from data import Data
 from matplotlib import pyplot as plt
 from ml_model import NetworkMean
@@ -16,7 +16,7 @@ df=data.load_vilknoy().merge(data.load_mw())
 df=df.merge(data.load_all_price())
 
 # df =data.load_all_price()
-df['date'].min()
+print(df['date'].min())
 
 def r2(df_, col='vilk'):
     temp = df_[['ret1m',col,'mw']].copy().dropna()

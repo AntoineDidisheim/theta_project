@@ -67,7 +67,7 @@ class ParamsModels:
         self.activation = 'relu'
         self.opti = Optimizer.ADAM
         self.loss = Loss.MSE
-        self.learning_rate = 0.01
+        self.learning_rate = 0.001
         self.dropout = 0.01
         self.output_range = 0.1
         self.output_pos_only =True
