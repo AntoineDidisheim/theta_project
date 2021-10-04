@@ -39,7 +39,19 @@ class Trainer:
         print('DATA example')
         print(self.model.data.x_df.head())
         print(self.model.data.x_df.describe())
+
+
         YEAR = range(1996,2020)
+
+        L = [int(x.split('_perf')[0]) for x in os.listdir(self.model.res_dir) if 'perf_' in x]
+        Y = []
+        for y in YEAR:
+            if y not in L:
+                Y.append(y)
+        YEAR = Y
+        print('Run on years', YEAR)
+
+
         for year in YEAR:
             try:
                 self.model.run_year(year)
