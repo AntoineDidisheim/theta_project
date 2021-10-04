@@ -76,6 +76,8 @@ class Trainer:
         m_dict = {'pred':'NNET','vilk':'vilk','mw':'mw'}
 
         L = [x for x in os.listdir(self.model.res_dir) if 'perf_' in x]
+        print('look for data in dir', self.model.res_dir)
+        print('found', L)
         full_df = pd.DataFrame()
         for l in tqdm(L,'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))
