@@ -33,7 +33,7 @@ par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
-for H in [20, 120]:
+for H in [120]:
     par.data.H = H
 
     par.update_model_name()
@@ -45,6 +45,6 @@ for H in [20, 120]:
     # train
     trainer = Trainer(par)
     self = trainer
-    trainer.launch_training_expanding_window()
+    #trainer.launch_training_expanding_window()
     trainer.create_paper()
 
