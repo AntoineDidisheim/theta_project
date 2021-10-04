@@ -8,7 +8,7 @@ class Data:
         self.par = par
 
 
-    def load_mw(self,reload=False):
+    def load_mw(self,reload=True):
         if reload:
             df = pd.read_csv(f'{self.par.data.dir}bench/MartinWagnerBounds.csv').rename(columns={'id': 'permno'})
             df['date']=pd.to_datetime(df['date'])
@@ -28,7 +28,7 @@ class Data:
             df = pd.read_pickle(f'{self.par.data.dir}bench/mw_daily.p')
 
         return df
-    def load_vilknoy(self,reload=False):
+    def load_vilknoy(self,reload=True):
         if reload:
             them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})
             them['date']=pd.to_datetime(them['date'])
