@@ -29,8 +29,8 @@ par = Params()
 par.data.cs_sample = CSSAMPLE.FULL
 # par.model.layers = [100,100,100]
 par.model.dropout = 0.01
-par.model.output_range = 0.5
-par.model.learning_rate = 0.01
+par.model.output_range = 0.1
+par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
 NN = [
