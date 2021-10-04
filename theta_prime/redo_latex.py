@@ -37,8 +37,8 @@ NN = [
     'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMSECssampleFULL'
 ]
 for N in NN:
-    par.name = 'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMSECssampleFULL'
-
+    # par.name = 'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMSECssampleFULL'
+    par.update_model_name()
     data = Data(par)
     # data.load_all_price(True)
     # data.load_pred_feature(True)
