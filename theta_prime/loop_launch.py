@@ -35,7 +35,7 @@ par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
 
-for H in [60,120]:
+for H in [120,60]:
     par.data.H = H
     if H>30:
         par.model.output_range = 0.5
