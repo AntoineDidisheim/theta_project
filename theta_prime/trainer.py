@@ -26,6 +26,8 @@ class Trainer:
 
         if self.par.data.H == 20:
             name_ret = 'ret1m'
+        if self.par.data.H == 60:
+            name_ret = 'ret3m'
         if self.par.data.H == 120:
             name_ret = 'ret6m'
         self.name_ret = name_ret

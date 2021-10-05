@@ -138,6 +138,8 @@ class Data:
                 print('###############',v)
                 if target_days == 20:
                     name_ret = 'ret1m'
+                if target_days == 60:
+                    name_ret = 'ret3m'
                 if target_days == 120:
                     name_ret = 'ret6m'
 
