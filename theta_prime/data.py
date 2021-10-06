@@ -263,9 +263,9 @@ class Data:
 
 
 
-self = Data(Params())
+# self = Data(Params())
 # self.load_all_price(True)
 # self.load_pred_feature(True)
-self.load_vilknoy(True)
-self.load_mw(True)
+# self.load_vilknoy(True)
+# self.load_mw(True)
 # self.load_additional_crsp(True)

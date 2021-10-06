@@ -21,6 +21,9 @@ from scipy.stats import pearsonr
 import shutil
 
 
+
+
+
 if 'nv-' in socket.gethostname():
     import matplotlib
     matplotlib.use('Agg')
@@ -35,7 +38,7 @@ par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
 
-for H in [120,60]:
+for H in [60]:
     par.data.H = H
     if H>30:
         par.model.output_range = 0.5
