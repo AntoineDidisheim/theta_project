@@ -348,9 +348,15 @@ class Trainer:
             plt.savefig(paper.dir_figs + f'{col}_high.png')
             self.plt_show()
 
+            tt=low.iloc[-1,:]-high.iloc[-1,:]
+            s = r'$R^2$ diff: '
+            for k in tt.index:
+                s=s+k+f' {np.round(tt[k],5)}'
+
             paper.append_fig_to_sec(fig_names=[f'{col}_low', f'{col}_high'],fig_captions=['low','high'], sec_name='Results',
                                     main_caption=rf"The figures compare the cumulative $R^2$ of the models splitting by {col}. "
-                                                 rf"Panel (a) shows the lowest third {col}, while panel (b) shows the highest {col}.")
+                                                 rf"Panel (a) shows the lowest third {col}, while panel (b) shows the highest {col}. "
+                                                 rf"Total {s}")
 
         ##################
         # PORTFOLIOS
