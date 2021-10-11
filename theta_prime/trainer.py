@@ -104,13 +104,16 @@ class Trainer:
         mw = self.model.data.load_mw()
         full_df = full_df.merge(mw,how='left')
         full_df = full_df.loc[~pd.isna(full_df['mw']),:]
+        full_df = full_df.loc[~pd.isna(full_df['vilk']),:]
+        full_df = full_df.reset_index(drop=True)
 
         name_ret = self.name_ret
         def r2(df_, col='pred'):
             if self.par.data.H==20:
                 r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             else:
-                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06**(self.par.data.H/256)-1)) ** 2).sum()
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06**(self.par.data.H/252)-1)) ** 2).sum()
+                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df_[name_ret]) ** 2).sum()
                 # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df[name_ret].mean()) ** 2).sum()
                 # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             return r2_pred
@@ -153,8 +156,6 @@ class Trainer:
         plt.savefig(paper.dir_figs + 'cumulative_r2.png')
         self.plt_show()
 
-
-
         # year per year
         df['year'] = df['date'].dt.year
         for i, c in enumerate(['pred', 'vilk','mw']):
@@ -177,11 +178,13 @@ class Trainer:
 
 
 
-        tt=df.groupby('year')['pred'].std()
-        plt.plot(tt.index, tt.values, color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0])
+        tt=df.groupby('year')[['pred','mw','vilk']].std()
+        plt.plot(tt.index, tt['pred'], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0],label='us')
+        plt.plot(tt.index, tt['mw'], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1],label='MW')
+        plt.plot(tt.index, tt['vilk'], color=didi.DidiPlot.COLOR[2], linestyle=didi.DidiPlot.LINE_STYLE[2],label='vilk')
         plt.grid()
         plt.xlabel('Year')
-        plt.ylabel(r'Pred std')
+        plt.ylabel(r'Pred. std')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'const_pred.png')
@@ -279,10 +282,10 @@ class Trainer:
         ym_r2=pd.DataFrame(ym_r2).T
         g = sns.pairplot(ym_r2)
         g.map_lower(corrfunc)
-        
+
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'corr_month.png')
-        
+
         self.plt_show()
 
 
@@ -349,7 +352,168 @@ class Trainer:
                                     main_caption=rf"The figures compare the cumulative $R^2$ of the models splitting by {col}. "
                                                  rf"Panel (a) shows the lowest third {col}, while panel (b) shows the highest {col}.")
 
+        ##################
+        # PORTFOLIOS
+        ##################
 
+        ## creating protfoio old way
+        def get_port_old_version(pred = 'pred',Q = 5):
+
+            df=full_df.copy()
+            df['port']=df.groupby('date')[pred].apply(lambda x: pd.qcut(x,Q,labels=False,duplicates='drop'))
+            df=df.groupby(['port','date'])[name_ret].mean().reset_index()
+            m=df.groupby('port').mean()
+            s=df.groupby('port').std()
+
+            for port in df['port'].unique():
+                port = int(port)
+                t = df.loc[df['port']==port,:].copy()
+                t['t']=t['date'].diff().dt.days.fillna(0)
+                t['tt']=t['t'].cumsum()
+                ind=t['tt']%60==0
+                t=t.loc[ind,:]
+                t.index = t['date']
+                r=1+t[name_ret]
+                plt.plot(r.index,r.cumprod(),label=f'Port {int(port)}',color = didi.DidiPlot.COLOR[port])
+            plt.legend()
+            plt.xlabel('Date')
+            plt.ylabel('Cum. Ret.')
+            plt.grid()
+            plt.tight_layout()
+            plt.savefig(paper.dir_figs + f'cum_ret_{pred}.png')
+            self.plt_show()
+            m = m.rename(columns={name_ret:pred})
+            s = s.rename(columns={name_ret:pred})
+            return m, s
+
+        M = []
+        S = []
+        TP = ['mw','vilk','pred']
+        for tp in TP:
+            m,s = get_port_old_version(tp)
+            M.append(m)
+            S.append(s)
+
+        M=pd.concat(M,1)
+        k=-1
+        for tp in TP:
+            k+=1
+            plt.plot(M.index, M[tp], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
+        plt.legend()
+        plt.xlabel('Portfolio index')
+        plt.ylabel('Port mean return')
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs +'comparing_mean.png')
+        self.plt_show()
+
+
+
+        paper.append_fig_to_sec(fig_names=[f'comparing_mean'], fig_captions=['Mean'], sec_name='Results',
+                                main_caption=rf"The figure above show the mean return of the portfolio split in quintile based on the models predictions.")
+
+
+
+
+        paper.append_fig_to_sec(fig_names=[f'cum_ret_{pred}' for pred in TP], fig_captions=TP, sec_name='Results',
+                                main_caption=rf"The figures above show the cumulative return across time of the model sorted by pred-quintiles.")
+
+
+
+        ### changing the weights
+
+        def get_port_weights(pred = 'pred',LEVERAGE = 1):
+            df=full_df.copy()
+            df['w']=(1+df[pred])**LEVERAGE
+
+            df['ew'] = 1
+            df['rw'] = df['w']*df[name_ret]
+            df=df.groupby('date')[['w','rw',name_ret,'ew']].sum()
+            df['r'] = df['rw']/df['w']
+            df['re'] = df[name_ret]/df['ew']
+
+
+
+            t = df.copy()
+            t['date'] = t.index
+            t['t'] = t['date'].diff().dt.days.fillna(0)
+            t['tt'] = t['t'].cumsum()
+            ind = t['tt'] % 60 == 0
+            t = t.loc[ind, :]
+
+            def get_m(input='r'):
+                m=df[input].agg(['mean','std'])
+                m['mean'] = (1+m['mean'])**(252/self.par.data.H) -1
+                m['std'] = m['std']*np.sqrt(252/self.par.data.H)
+                m['sharp'] = m['mean']/m['std']
+                return m
+            get_m('r')
+            get_m('re')
+
+            return get_m('r'), get_m('re'), t
+
+        def get_all_weight_perf(pred='pred'):
+            R = []
+            for leverage in tqdm(np.arange(1,31,1),f'loop for all weight perf {pred}'):
+                r,re, t = get_port_weights(pred=pred,LEVERAGE=leverage)
+                r.name = leverage
+                R.append(r)
+            return pd.concat(R,1).T
+
+        wp = {}
+        for tp in TP:
+            t = get_all_weight_perf(tp)
+            wp[tp] = t
+
+        k = -1
+        for tp in TP:
+            k+=1
+            df = wp[tp]
+            plt.plot(df.index, df['mean'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
+
+        plt.legend()
+        plt.xlabel('Weight factor')
+        plt.ylabel('weighted portfolio mean return')
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs +'mean_vs_factor.png')
+        self.plt_show()
+
+        k = -1
+        for tp in TP:
+            k += 1
+            df = wp[tp]
+            plt.plot(df.index, df['sharp'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
+
+        plt.legend()
+        plt.xlabel('Weight factor')
+        plt.ylabel('weighted portfolio mean return')
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'sharp_vs_factor.png')
+        self.plt_show()
+
+        paper.append_fig_to_sec(fig_names=[f'mean_vs_factor', f'sharp_vs_factor'], fig_captions=['Mean', 'Sharp'], sec_name='Results',
+                                main_caption=rf"The figures above show the mean (panel a) and sharp-ratio (panel b) return of the portfolio built on weighted by a factor of $(1+r)^{{fact}}$, "
+                                             rf"where r is the predcition and fact is the factor on the x-axis.")
+
+
+        ##################
+        # random cut in sample
+        ##################
+        SIM = 1000
+        D = []
+        for sim in tqdm(range(SIM),'compute sim split'):
+            t = final[['ticker']].drop_duplicates()
+            t['random'] = np.random.normal(size=t.shape[0])
+            t.index = t['ticker']
+            final['random'] = final['ticker']
+            final['random'] = final['random'].map(t['random'].to_dict())
+
+            final['q'] = pd.qcut(final['random'], q=3, labels=False, duplicates='drop')
+            t=final.groupby('q').apply(r2)
+            d = t[2]-t[0]
+            D.append(d)
 
     def plt_show(self):
         plt.close()

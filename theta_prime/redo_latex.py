@@ -21,24 +21,30 @@ from scipy.stats import pearsonr
 import shutil
 
 
+
+
+
 if 'nv-' in socket.gethostname():
     import matplotlib
     matplotlib.use('Agg')
 
 par = Params()
+par.name_detail='PostVac'
 par.data.cs_sample = CSSAMPLE.FULL
-# par.model.layers = [100,100,100]
-par.model.dropout = 0.01
-par.model.output_range = 0.1
+par.model.layers = [100,100,100]
+par.model.dropout = 0.2
+par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
-NN = [
-    'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMSECssampleFULL'
-]
-for N in NN:
-    # par.name = 'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMSECssampleFULL'
+
+for H in [60]:
+    par.data.H = H
+    if H>30:
+        par.model.output_range = 0.5
+
     par.update_model_name()
+
     data = Data(par)
     # data.load_all_price(True)
     # data.load_pred_feature(True)
@@ -46,6 +52,5 @@ for N in NN:
     # train
     trainer = Trainer(par)
     self = trainer
-    # trainer.launch_training_expanding_window()
     trainer.create_paper()
 
