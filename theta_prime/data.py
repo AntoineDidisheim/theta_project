@@ -26,8 +26,14 @@ class Data:
             df.to_pickle(f'{self.par.data.dir}bench/mw_daily.p')
         else:
             df = pd.read_pickle(f'{self.par.data.dir}bench/mw_daily.p')
-
         return df
+
+
+
+    def load_kelly(self):
+        df = pd.read_pickle(f'{self.par.data.dir}/Data.pkl')
+        return df
+
     def load_vilknoy(self,reload=True):
         if reload:
             them = pd.read_csv(f'{self.par.data.dir}bench/glb_daily.csv').rename(columns={'id': 'permno'})

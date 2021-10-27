@@ -504,28 +504,28 @@ class Trainer:
                                              rf"where r is the predcition and fact is the factor on the x-axis.")
 
 
-        ##################
-        # random cut in sample
-        ##################
-        SIM = 1000
-        D = []
-        for sim in tqdm(range(SIM),'compute sim split'):
-            t = final[['ticker']].drop_duplicates()
-            t['random'] = np.random.normal(size=t.shape[0])
-            t.index = t['ticker']
-            final['random'] = final['ticker']
-            final['random'] = final['random'].map(t['random'].to_dict())
-
-            final['q'] = pd.qcut(final['random'], q=3, labels=False, duplicates='drop')
-            t=final.groupby('q').apply(r2)
-            d = t[2]-t[0]
-            D.append(d)
-
-        plt.hist(D,color='k',bins=25)
-        plt.savefig(paper.dir_figs + 'boot_strap_hist_diff.png')
-        paper.append_fig_to_sec(fig_names=[f'boot_strap_hist_diff'], sec_name='Results',
-                                main_caption=rf"The figure above estimate the distribution of a 3-way split by firm.")
-        self.plt_show()
+        # ##################
+        # # random cut in sample
+        # ##################
+        # SIM = 1000
+        # D = []
+        # for sim in tqdm(range(SIM),'compute sim split'):
+        #     t = final[['ticker']].drop_duplicates()
+        #     t['random'] = np.random.normal(size=t.shape[0])
+        #     t.index = t['ticker']
+        #     final['random'] = final['ticker']
+        #     final['random'] = final['random'].map(t['random'].to_dict())
+        #
+        #     final['q'] = pd.qcut(final['random'], q=3, labels=False, duplicates='drop')
+        #     t=final.groupby('q').apply(r2)
+        #     d = t[2]-t[0]
+        #     D.append(d)
+        #
+        # plt.hist(D,color='k',bins=25)
+        # plt.savefig(paper.dir_figs + 'boot_strap_hist_diff.png')
+        # paper.append_fig_to_sec(fig_names=[f'boot_strap_hist_diff'], sec_name='Results',
+        #                         main_caption=rf"The figure above estimate the distribution of a 3-way split by firm.")
+        # self.plt_show()
 
     def plt_show(self):
         plt.close()
