@@ -42,13 +42,14 @@ par.model.E = 10
 
 for H in [20,60,120]:
     par.data.H = H
+
     if H>30:
         par.model.output_range = 0.5
 
     par.update_model_name()
 
     data = Data(par)
-    # data.load_all_price(True)
+    data.load_feature_kelly(True)
     # data.load_pred_feature(True)
 
     # train
