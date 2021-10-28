@@ -3,6 +3,7 @@ import numpy as np
 from parameters import *
 import didipack as didi
 import os
+import sqlite3
 class Data:
     def __init__(self, par = Params()):
         self.par = par
@@ -59,6 +60,48 @@ class Data:
         t['permno'] = t['permno'].astype(int)
         t.to_csv('data/permno.txt', index=False, header=False)
         return t
+
+
+    def load_translator_gvkey_permno_basic(self, reload=False):
+        tr = pd.read_csv(self.par.data.dir+'permno_gvkey.csv')
+        tr.columns = [x.lower() for x in tr.columns]
+        tr=tr.loc[:,['gvkey','lpermno','linkdt','linkenddt']]
+        tr['linkdt']=pd.to_datetime(tr['linkdt'],format='%Y%m%d')
+        tr['linkenddt']=pd.to_datetime(tr['linkenddt'],format='%Y%m%d',errors='coerce')
+        tr['linkenddt'] = tr['linkenddt'].fillna(pd.to_datetime(2100,format='%Y'))
+        return tr
+
+    def load_tr_kelly(self,reload=False):
+        if reload:
+            df = self.load_kelly()
+            tr = self.load_translator_gvkey_permno_basic()
+
+            # Make the db in memory
+            conn = sqlite3.connect(':memory:')
+            # write the tables
+            df[['date', 'gvkey']].to_sql('df', conn, index=False)
+            tr.to_sql('tr', conn, index=False)
+            #write a query to merge between the date only
+            qry = '''
+                select  
+                    *
+                from
+                    df join tr on
+                    df.date between linkdt and linkenddt AND df.gvkey = tr.gvkey
+                '''
+            tr = pd.read_sql_query(qry, conn)
+
+            # removing extra gvkey
+            tr=tr[['gvkey','date','lpermno']].iloc[:,1:]
+            tr['date']=pd.to_datetime(tr['date'])
+            tr.columns = ['gvkey','date','permno']
+
+            tr.to_pickle(self.par.data.dir + f'raw_merge/tr_kelly.p')
+            print('finish',flush=True)
+        else:
+            tr = pd.read_pickle(self.par.data.dir + f'raw_merge/tr_kelly.p')
+        return tr
+
 
     def load_all_price(self, reload=False):
         if reload:
@@ -269,7 +312,7 @@ class Data:
 
 
 
-# self = Data(Params())
+self = Data(Params())
 # self.load_all_price(True)
 # self.load_pred_feature(True)
 # self.load_vilknoy(True)
