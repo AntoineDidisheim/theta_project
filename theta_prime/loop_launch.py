@@ -35,10 +35,11 @@ par.model.layers = [32,16,4]
 par.model.dropout = 0.0
 par.model.output_range = 0.1
 par.model.learning_rate = 0.005
+par.model.learning_rate = 0.05
 par.model.loss = Loss.MSE
 par.model.E = 5
 
-
+H =20
 
 for H in [20, 60]:
     par.data.H = H
