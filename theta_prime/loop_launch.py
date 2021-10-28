@@ -37,9 +37,6 @@ par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 
-data = Data(par)
-data.load_tr_kelly(True)
-data.load_feature_kelly(True)
 
 
 for H in [20, 60]:
@@ -50,8 +47,8 @@ for H in [20, 60]:
     par.update_model_name()
 
     data = Data(par)
-    # data.load_all_price(True)
-    # data.load_pred_feature(True)
+    data.load_tr_kelly(True)
+    data.load_feature_kelly(True)
 
     # train
     trainer = Trainer(par)
