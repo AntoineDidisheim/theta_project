@@ -200,7 +200,16 @@ class Data:
             kelly = self.load_kelly()
             print('kelly',kelly['date'].min(),kelly['date'].max())
             print('ret',ret['date'].min(),ret['date'].max())
-            kelly.shape
+
+            # reseting the days of some month because it's not the same first in our version
+            ret['ym'] = ret['date'].dt.year*100+ret['date'].dt.month
+            t=ret.groupby('ym')['date'].transform('min')
+            ind=t==ret['date']
+            ret=ret.loc[ind,:]
+            ret = ret.reset_index(drop=True)
+            ret['date']=pd.to_datetime(ret['ym'],format='%Y%m')
+
+
             kelly.head()
             label = kelly.loc[:,['gvkey','date']]
             ts = kelly.loc[:,[x for x in kelly.columns if 'M_' in x]]
