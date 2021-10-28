@@ -211,7 +211,11 @@ class Data:
             ind=~kelly[['permno','date']].duplicated()
             kelly = kelly.loc[ind,:]
             ret=ret.dropna()
-            kelly=ret.merge(kelly,how='left',on=['date','permno'])
+            ret['ym'] = ret['date'].dt.year*100+ret['date'].dt.month
+            kelly['ym'] = kelly['date'].dt.year*100+kelly['date'].dt.month
+            del kelly['date']
+            kelly=ret.merge(kelly,how='left',on=['ym','permno'])
+            del kelly['ym ']
 
 
 
