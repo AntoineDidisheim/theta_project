@@ -31,8 +31,10 @@ if 'nv-' in socket.gethostname():
 par = Params()
 par.name_detail='PostVac'
 par.data.cs_sample = CSSAMPLE.FULL
-par.model.layers = [100,100,100]
-par.model.dropout = 0.2
+# par.model.layers = [100,100,100]
+par.model.layers = [32,16,8]
+par.model.dropout = 0.0
+par.model.batch_size = 256
 par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
