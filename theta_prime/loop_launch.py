@@ -48,9 +48,9 @@ for H in [20, 60]:
 
     par.update_model_name()
 
-    # data = Data(par)
-    # data.load_tr_kelly(True)
-    # data.load_feature_kelly(True)
+    data = Data(par)
+    data.load_tr_kelly(True)
+    data.load_feature_kelly(True)
     #
     # train
     trainer = Trainer(par)

@@ -198,31 +198,33 @@ class Data:
             ret =  ret[['permno', 'date', 'ticker', name_ret]]
 
             kelly = self.load_kelly()
+            TS_COL = [x for x in kelly.columns if 'M_' in x]
+            CHAR_COL = [x for x in kelly.columns[4:] if 'M_' not in x]
             print('kelly',kelly['date'].min(),kelly['date'].max())
             print('ret',ret['date'].min(),ret['date'].max())
-
-            # reseting the days of some month because it's not the same first in our version
-            ret['ym'] = ret['date'].dt.year*100+ret['date'].dt.month
-            t=ret.groupby('ym')['date'].transform('min')
-            ind=t==ret['date']
-            ret=ret.loc[ind,:]
-            ret = ret.reset_index(drop=True)
-            ret['date']=pd.to_datetime(ret['ym'],format='%Y%m')
-
-
-            kelly.head()
-            label = kelly.loc[:,['gvkey','date']]
-            ts = kelly.loc[:,[x for x in kelly.columns if 'M_' in x]]
-            indu = pd.get_dummies(kelly['sic2'])
-            indu.columns = ['ind_'+str(x) for x in indu.columns]
-            char = kelly.loc[:,[x for x in kelly.columns[4:] if 'M_' not in x]]
 
             # transform the label and merge with tr
             tr = self.load_tr_kelly()
             ind=tr[['date','gvkey']].duplicated()
             tr=tr.loc[~ind,:]
-            label=label.merge(tr,how='left')
-            label=label.merge(ret,how='left')
+            kelly=kelly.merge(tr,how='left')
+            ind=~kelly[['permno','date']].duplicated()
+            kelly = kelly.loc[ind,:]
+            ret=ret.dropna()
+            kelly=ret.merge(kelly,how='left',on=['date','permno'])
+
+
+
+
+
+            kelly.head()
+            label = kelly.loc[:,['permno','date','ticker','ret1m']]
+            ts = kelly.loc[:,TS_COL]
+            indu = pd.get_dummies(kelly['sic2'])
+            indu.columns = ['ind_'+str(x) for x in indu.columns]
+            char = kelly.loc[:,CHAR_COL]
+
+
 
             ind = ~pd.isna(label['ret1m'])
             print('perc keep', ind.mean())
