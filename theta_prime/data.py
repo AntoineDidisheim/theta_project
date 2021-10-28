@@ -236,7 +236,7 @@ class Data:
             df =pd.concat([label,char,ts,indu],axis=1)
             ## todo, perhaps add the interactions
 
-            ret.to_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
+            df.to_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
 
         else:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
@@ -335,7 +335,7 @@ class Data:
             if self.par.data.cs_sample in [CSSAMPLE.VILK, CSSAMPLE.FULL]:
                 df = self.load_pred_feature()
             if self.par.data.cs_sample == CSSAMPLE.KELLY:
-                df = self.load_feature_kelly()
+                df = self.load_feature_kelly(False)
         except:
             print('Feature not pre-processed, starting now with prices:')
             self.load_all_price(True)
@@ -362,7 +362,11 @@ class Data:
         self.x_df = df.iloc[:,4:]
 
         for c in self.x_df.columns:
-            self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
+            if self.x_df[c].dtypes!='uint8':
+                print('norm',c)
+                self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
+            else:
+                print('dont norm',c)
             # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
 
 
