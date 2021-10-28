@@ -76,6 +76,7 @@ class ParamsModels:
         self.tex_dir = 'tex_res'
         self.tex_name = 'theta_prime'
 
+        self.batch_normalization = True
 
 
 class DataParams:
@@ -133,6 +134,10 @@ class Params:
             n+= 'Vsubset'+str(len(self.data.var_subset))
         if self.data.max_ret_in_training is not None:
             n+= 'Mret'+str(self.data.max_ret_in_training)
+
+
+        if self.model.batch_normalization:
+            n+='BatchN'
 
         n+='Cssample'+str(self.data.cs_sample.name)
 

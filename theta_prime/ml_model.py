@@ -88,6 +88,9 @@ class NetworkMean:
                 if self.par.model.dropout >0:
                     L.append(tf.keras.layers.Dropout(rate=self.par.model.dropout, seed=12345))
 
+                if self.par.model.batch_normalization:
+                    L.append(tf.keras.layers.BatchNormalization())
+
 
         if self.par.model.output_pos_only:
             def final_act(x):
