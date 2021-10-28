@@ -37,7 +37,7 @@ par.model.output_range = 0.1
 par.model.learning_rate = 0.005
 par.model.learning_rate = 0.0001
 par.model.loss = Loss.MSE
-par.model.E = 5
+par.model.E = 25
 
 H =20
 
