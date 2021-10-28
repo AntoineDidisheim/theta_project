@@ -35,7 +35,7 @@ par.model.layers = [16,4]
 par.model.dropout = 0.0
 par.model.output_range = 0.1
 par.model.learning_rate = 0.005
-par.model.learning_rate = 0.0001
+par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 par.model.E = 25
 
