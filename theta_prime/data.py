@@ -234,7 +234,9 @@ class Data:
             ts = ts.loc[ind,:].reset_index(drop=True)
 
             df =pd.concat([label,char,ts,indu],axis=1)
-            ## todo, perhaps add the interactions
+            # ## todo, perhaps add the interactions
+            # for i in tqdm(range(ts.shape[1])):
+            #     ts.iloc[]
 
             df.to_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
 
