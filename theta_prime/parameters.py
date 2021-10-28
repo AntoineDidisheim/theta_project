@@ -39,6 +39,7 @@ class Loss(Enum):
 class CSSAMPLE(Enum):
     FULL = 1
     VILK = 2
+    KELLY = 3
 
 
 

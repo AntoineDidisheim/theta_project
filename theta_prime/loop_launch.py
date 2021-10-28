@@ -30,12 +30,16 @@ if 'nv-' in socket.gethostname():
 
 par = Params()
 par.name_detail='PostVac'
-par.data.cs_sample = CSSAMPLE.FULL
-par.model.layers = [100,100,100]
+par.data.cs_sample = CSSAMPLE.VILK
+par.model.layers = [64,32,16]
 par.model.dropout = 0.2
 par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
+
+data = Data(par)
+data.load_tr_kelly(True)
+data.load_feature_kelly(True)
 
 
 for H in [20, 60]:

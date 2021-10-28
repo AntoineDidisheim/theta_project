@@ -4,6 +4,7 @@ from parameters import *
 import didipack as didi
 import os
 import sqlite3
+from tqdm import tqdm
 class Data:
     def __init__(self, par = Params()):
         self.par = par
@@ -28,6 +29,7 @@ class Data:
         else:
             df = pd.read_pickle(f'{self.par.data.dir}bench/mw_daily.p')
         return df
+
 
 
 
@@ -178,6 +180,59 @@ class Data:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/compustat.p')
         return df
 
+    def load_feature_kelly(self, reload=False):
+        target_days = self.par.data.H
+
+        if reload:
+            print('####################', 'start pred feature pr-processing KELLY')
+            ret = self.load_all_price()
+            # df = df.head(1000000)
+            ret = ret.sort_values(['date', 'permno']).reset_index(drop=True)
+            if target_days == 20:
+                name_ret = 'ret1m'
+            if target_days == 60:
+                name_ret = 'ret3m'
+            if target_days == 120:
+                name_ret = 'ret6m'
+
+            ret =  ret[['permno', 'date', 'ticker', name_ret]]
+
+            kelly = self.load_kelly()
+            print('kelly',kelly['date'].min(),kelly['date'].max())
+            print('ret',ret['date'].min(),ret['date'].max())
+            kelly.shape
+            kelly.head()
+            label = kelly.loc[:,['gvkey','date']]
+            ts = kelly.loc[:,[x for x in kelly.columns if 'M_' in x]]
+            indu = pd.get_dummies(kelly['sic2'])
+            indu.columns = ['ind_'+str(x) for x in indu.columns]
+            char = kelly.loc[:,[x for x in kelly.columns[4:] if 'M_' not in x]]
+
+            # transform the label and merge with tr
+            tr = self.load_tr_kelly()
+            ind=tr[['date','gvkey']].duplicated()
+            tr=tr.loc[~ind,:]
+            label=label.merge(tr,how='left')
+            label=label.merge(ret,how='left')
+
+            ind = ~pd.isna(label['ret1m'])
+            print('perc keep', ind.mean())
+
+            label = label.loc[ind,:].reset_index(drop=True)
+            label = label.loc[:,['permno', 'date', 'ticker', 'ret1m']]
+            indu = indu.loc[ind,:].reset_index(drop=True)
+            char = char.loc[ind,:].reset_index(drop=True)
+            ts = ts.loc[ind,:].reset_index(drop=True)
+
+            df =pd.concat([label,char,ts,indu],axis=1)
+            ## todo, perhaps add the interactions
+
+            ret.to_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
+
+        else:
+            df = pd.read_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
+        return df
+
     def load_pred_feature(self, reload = False):
         target_days = self.par.data.H
 
@@ -268,12 +323,18 @@ class Data:
 
     def load_internally(self):
         try:
-            df = self.load_pred_feature()
+            if self.par.data.cs_sample in [CSSAMPLE.VILK, CSSAMPLE.FULL]:
+                df = self.load_pred_feature()
+            if self.par.data.cs_sample == CSSAMPLE.KELLY:
+                df = self.load_feature_kelly()
         except:
             print('Feature not pre-processed, starting now with prices:')
             self.load_all_price(True)
             print('Start now with the features')
-            df=self.load_pred_feature(True)
+            if self.par.data.cs_sample in [CSSAMPLE.VILK, CSSAMPLE.FULL]:
+                df = self.load_pred_feature(True)
+            if self.par.data.cs_sample == CSSAMPLE.KELLY:
+                df = self.load_feature_kelly(True)
 
             print('finish with vilk and mw')
             self.load_mw(True)
