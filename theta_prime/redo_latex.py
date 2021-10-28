@@ -36,7 +36,7 @@ par.model.dropout = 0.2
 par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
-
+par.model.E = 10
 
 for H in [20,60,120]:
     par.data.H = H
