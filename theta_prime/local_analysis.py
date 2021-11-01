@@ -17,8 +17,8 @@ def load_final(f):
             t = t.append(tt,ignore_index=True)
     return t
 
-mse = 'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMSECssampleFULL'
-mae = 'defaultL64_32_16_Lr0001Dropout00BS512ActreluOutRange05LossMAECssampleFULL'
+mae = 'PostVacL100_100_100_Lr0001Dropout02BS512ActreluOutRange05pLossMSECssampleFULL'
+
 
 mse = load_final(mse)
 mae = load_final(mae)

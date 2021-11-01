@@ -83,8 +83,8 @@ class NetworkMean:
             L = []
             for i, l in enumerate(self.par.model.layers):
                 print(i, l)
-                if self.par.model.regulator:
-                    dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64,kernel_regularizer='l1')
+                if self.par.model.regulator>0:
+                    dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64,kernel_regularizer=tf.keras.regularizers.L1(self.par.model.regulator))
                 else:
                     dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64)
                 L.append(dense)

@@ -4,7 +4,7 @@ import time
 from pandarallel import pandarallel
 import math
 import numpy as np
-from parameters import  *
+from parameters import *
 from data import Data
 from matplotlib import pyplot as plt
 from ml_model import NetworkMean
@@ -18,8 +18,9 @@ import tensorflow as tf
 
 par = Params()
 
+
 class Trainer:
-    def __init__(self, par = Params()):
+    def __init__(self, par=Params()):
         self.par = par
         # self.par.name = 'defaultL64_32_16_Lr001Dropout001BS512ActreluOutRange05LossMSERetLOGd3OptCompCrspEXT'
         self.model = NetworkMean(self.par)
@@ -32,8 +33,6 @@ class Trainer:
             name_ret = 'ret6m'
         self.name_ret = name_ret
 
-
-
     def launch_training_expanding_window(self):
         np.random.seed(12345)
         tf.random.set_seed(12345)
@@ -42,8 +41,7 @@ class Trainer:
         print(self.model.data.x_df.head())
         print(self.model.data.x_df.describe())
 
-
-        YEAR = range(1996,2020)
+        YEAR = range(1996, 2020)
 
         L = [int(x.split('perf_')[1].split('.p')[0]) for x in os.listdir(self.model.res_dir) if 'perf_' in x]
         Y = []
@@ -55,64 +53,63 @@ class Trainer:
         YEAR = Y
         print('Run on years', YEAR)
 
-
         for year in YEAR:
             try:
                 self.model.run_year(year)
             except:
-                print('skip year',year,flush=True)
+                print('skip year', year, flush=True)
 
     def create_paper(self):
         # define the paper maine directory (can be relative or abolute path)
-        f_dir = self.par.model.tex_dir+'/'+str(self.par.name)+'/'
+        f_dir = self.par.model.tex_dir + '/' + str(self.par.name) + '/'
         if os.path.exists(f_dir):
             shutil.rmtree(f_dir)
-        paper = didi.LatexPaper(dir_= f_dir)
+        paper = didi.LatexPaper(dir_=f_dir)
         # Creating the paper itself with a given title, author name and some default sections (non-mandatory)
-        paper.create_paper(self.par.model.tex_name, title="KiSS: Keep it Simple Stupid", author="Antoine Didisheim", sec=['Introduction','Results'])
-
+        paper.create_paper(self.par.model.tex_name, title="KiSS: Keep it Simple Stupid", author="Antoine Didisheim", sec=['Introduction', 'Results'])
 
         L = "Layer: ("
         for l in self.par.model.layers:
             L += str(l) + ','
         L = L[:-1] + ')'
         model_description = '\n' + "In this section we present the results where the neural network architecture is defined as, \n \n" \
-                                r"\begin{enumerate}" + '\n' \
-                                rf"\item Learning rate {self.par.model.learning_rate}" + '\n' \
-                                rf"\item Optimizer {self.par.model.opti}" + '\n' \
-                                rf"\item {L}" + '\n' \
-                                rf"\item Loss {self.par.model.loss.name}" + '\n' \
-                                rf"\item Output range {self.par.model.output_range}" + '\n' \
-                                rf"\item Output positive only {self.par.model.output_pos_only}" + '\n' \
-                                rf"\item Batch size {self.par.model.batch_size}" + '\n' \
-                                rf"\item Training data {self.par.data.cs_sample.name}" + '\n' \
-                                rf"\item Forecasting horizon {self.par.data.H}" + '\n'
+                                   r"\begin{enumerate}" + '\n' \
+                                                          rf"\item Learning rate {self.par.model.learning_rate}" + '\n' \
+                                                                                                                   rf"\item Optimizer {self.par.model.opti}" + '\n' \
+                                                                                                                                                               rf"\item {L}" + '\n' \
+                                                                                                                                                                               rf"\item Loss {self.par.model.loss.name}" + '\n' \
+                                                                                                                                                                                                                           rf"\item Output range {self.par.model.output_range}" + '\n' \
+                                                                                                                                                                                                                                                                                  rf"\item Output positive only {self.par.model.output_pos_only}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                    rf"\item Batch size {self.par.model.batch_size}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                                       rf"\item Training data {self.par.data.cs_sample.name}" + '\n' \
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                rf"\item Forecasting horizon {self.par.data.H}" + '\n'
 
         paper.append_text_to_sec(sec_name='Introduction', text=model_description.replace('_', ' '))
 
-        MODEL_LIST=['pred', 'vilk', 'mw']
-        m_dict = {'pred':'NNET','vilk':'vilk','mw':'mw'}
+        MODEL_LIST = ['pred', 'vilk', 'mw']
+        m_dict = {'pred': 'NNET', 'vilk': 'vilk', 'mw': 'mw'}
 
         L = [x for x in os.listdir(self.model.res_dir) if 'perf_' in x]
         print('look for data in dir', self.model.res_dir)
         print('found', L)
         full_df = pd.DataFrame()
-        for l in tqdm(L,'load original df'):
+        for l in tqdm(L, 'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))
 
         ## add martin wagner
         mw = self.model.data.load_mw()
-        full_df = full_df.merge(mw,how='left')
-        full_df = full_df.loc[~pd.isna(full_df['mw']),:]
-        full_df = full_df.loc[~pd.isna(full_df['vilk']),:]
+        full_df = full_df.merge(mw, how='left')
+        full_df = full_df.loc[~pd.isna(full_df['mw']), :]
+        full_df = full_df.loc[~pd.isna(full_df['vilk']), :]
         full_df = full_df.reset_index(drop=True)
 
         name_ret = self.name_ret
+
         def r2(df_, col='pred'):
-            if self.par.data.H==20:
+            if self.par.data.H == 20:
                 r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             else:
-                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06**(self.par.data.H/252)-1)) ** 2).sum()
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06 ** (self.par.data.H / 252) - 1)) ** 2).sum()
                 # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df_[name_ret]) ** 2).sum()
                 # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df[name_ret].mean()) ** 2).sum()
                 # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
@@ -120,22 +117,22 @@ class Trainer:
 
         # df[name_ret].mean()
         if self.par.data.H == 20:
-            ADD_TEXT=r' $R^2$ is defined with 0.0 as a denominator benchmark. '
+            ADD_TEXT = r' $R^2$ is defined with 0.0 as a denominator benchmark. '
         else:
-            ADD_TEXT=r' $R^2$ is defined with in sample mean as a denominator benchmark. '
+            ADD_TEXT = r' $R^2$ is defined with in sample mean as a denominator benchmark. '
 
         ##################
         # r2 plots
         ##################
 
         df = full_df.dropna().copy()
-        r2(df,'vilk')
+        r2(df, 'vilk')
 
         YEAR = np.sort(df['date'].dt.year.unique())
         R = []
-        for y in tqdm(YEAR,'compute R^2 expanding'):
+        for y in tqdm(YEAR, 'compute R^2 expanding'):
             ind = df['date'].dt.year <= y
-            r = {'year':y}
+            r = {'year': y}
             for c in MODEL_LIST:
                 r[c] = r2(df.loc[ind, :], c)
 
@@ -158,7 +155,7 @@ class Trainer:
 
         # year per year
         df['year'] = df['date'].dt.year
-        for i, c in enumerate(['pred', 'vilk','mw']):
+        for i, c in enumerate(['pred', 'vilk', 'mw']):
             t = df.groupby('year').apply(lambda x: r2(x, col=c))
             plt.plot(d, t, color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c if c != 'pred' else 'NNET')
         plt.grid()
@@ -169,19 +166,15 @@ class Trainer:
         plt.savefig(paper.dir_figs + 'year_r2.png')
         self.plt_show()
 
-
-
         # We now add two figure side by side
         paper.append_fig_to_sec(fig_names=['cumulative_r2', 'year_r2'], sec_name='Results',
                                 fig_captions=['Cumulative', 'Year per year'],  # you can add individual caption to each figure (leave empty for no label)
-                                main_caption=r"The figures above show the $R^2$ of the main models. "+ADD_TEXT)
+                                main_caption=r"The figures above show the $R^2$ of the main models. " + ADD_TEXT)
 
-
-
-        tt=df.groupby('year')[['pred','mw','vilk']].std()
-        plt.plot(tt.index, tt['pred'], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0],label='us')
-        plt.plot(tt.index, tt['mw'], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1],label='MW')
-        plt.plot(tt.index, tt['vilk'], color=didi.DidiPlot.COLOR[2], linestyle=didi.DidiPlot.LINE_STYLE[2],label='vilk')
+        tt = df.groupby('year')[['pred', 'mw', 'vilk']].std()
+        plt.plot(tt.index, tt['pred'], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0], label='us')
+        plt.plot(tt.index, tt['mw'], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1], label='MW')
+        plt.plot(tt.index, tt['vilk'], color=didi.DidiPlot.COLOR[2], linestyle=didi.DidiPlot.LINE_STYLE[2], label='vilk')
         plt.grid()
         plt.xlabel('Year')
         plt.ylabel(r'Pred. std')
@@ -193,7 +186,6 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=['const_pred'], sec_name='Results',
 
                                 main_caption=r"The figures above show the standard deviation year per year of the predicitons. It is here to check constant predicitons. ")
-
 
         ##################
         # stock by stock
@@ -222,8 +214,6 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=['hist_stock_r2', 'box_stock_r2'], sec_name='Results',
                                 main_caption=r"The figures compare the $R^2$ firm by firm of each model with histograms (a) and boxplots (b)")
 
-
-
         ### violin noow :)
         violin = pd.DataFrame()
         for v in MODEL_LIST:
@@ -250,7 +240,6 @@ class Trainer:
                                 main_caption=r"The figures compare the $R^2$ firm by firm sorted by market cap. size of each model with violin plots (a) and boxplots (b). "
                                              r"For both figure, we compute the average market size across the sample to determine the size quintile of the firm.")
 
-
         ##################
         # correlation of perf
         ##################
@@ -267,19 +256,17 @@ class Trainer:
         plt.savefig(paper.dir_figs + 'corr_firms.png')
         self.plt_show()
 
-
-        paper.append_fig_to_sec(fig_names=['corr_firms'], sec_name='Results', size = "80mm",
+        paper.append_fig_to_sec(fig_names=['corr_firms'], sec_name='Results', size="80mm",
                                 main_caption=r"The figures illustrate the correlation between each models firm by firm $R^2$")
-
 
         df['ym'] = df['date'].dt.year * 100 + df['date'].dt.month
 
-        ym_r2 =[]
+        ym_r2 = []
         for v in MODEL_LIST:
-            tt = df.groupby(['ym']).apply(lambda x: r2(x,v))
+            tt = df.groupby(['ym']).apply(lambda x: r2(x, v))
             tt.name = m_dict[v]
             ym_r2.append(tt)
-        ym_r2=pd.DataFrame(ym_r2).T
+        ym_r2 = pd.DataFrame(ym_r2).T
         g = sns.pairplot(ym_r2)
         g.map_lower(corrfunc)
 
@@ -288,19 +275,16 @@ class Trainer:
 
         self.plt_show()
 
-
-        paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results', size = "80mm",
+        paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results', size="80mm",
                                 main_caption=r"The figures illustrate the correlation between each models month by month $R^2$")
-
 
         # ### add the new section with the
         # paper.append_text_to_sec('Results',r'\n \n \clearpage \n \n')
         # paper.create_new_sec('subsample_analysis')
         # paper.append_text_to_sec('subsample_analysis',r'\section{Subsample Analysis}')
 
-
-        comp=self.model.data.load_compustat(True)
-        comp_col=list(comp.columns[2:])
+        comp = self.model.data.load_compustat(True)
+        comp_col = list(comp.columns[2:])
         df['year'] = df['date'].dt.year
         final = df.merge(comp)
 
@@ -317,7 +301,7 @@ class Trainer:
             del res['year']
             return res
 
-        def plot_expanding_r2(res,y_min,y_max):
+        def plot_expanding_r2(res, y_min, y_max):
             # cummulative r2 plots
             d = pd.to_datetime(res.index, format='%Y')
             for i, c in enumerate(MODEL_LIST):
@@ -325,35 +309,33 @@ class Trainer:
             plt.grid()
             plt.xlabel('Year')
             plt.ylabel(r'Cummulative $R^2$')
-            plt.ylim(y_min,y_max)
+            plt.ylim(y_min, y_max)
             plt.legend()
             plt.tight_layout()
 
-
-
         for col in comp_col:
-            print('#########',col)
-            final['q'] = pd.qcut(final[col],q=3,labels=False,duplicates='drop')
-            low=get_expanding_r2(final.loc[final['q']==0,:].copy())
+            print('#########', col)
+            final['q'] = pd.qcut(final[col], q=3, labels=False, duplicates='drop')
+            low = get_expanding_r2(final.loc[final['q'] == 0, :].copy())
             high = get_expanding_r2(final.loc[final['q'] == 2, :].copy())
 
-            y_min=min(low.min().min(),high.min().min())*1.1
-            y_max=max(low.max().max(),high.max().max())*1.1
+            y_min = min(low.min().min(), high.min().min()) * 1.1
+            y_max = max(low.max().max(), high.max().max()) * 1.1
 
-            plot_expanding_r2(low,y_min,y_max)
+            plot_expanding_r2(low, y_min, y_max)
             plt.savefig(paper.dir_figs + f'{col}_low.png')
             self.plt_show()
 
-            plot_expanding_r2(high,y_min,y_max)
+            plot_expanding_r2(high, y_min, y_max)
             plt.savefig(paper.dir_figs + f'{col}_high.png')
             self.plt_show()
 
-            tt=low.iloc[-1,:]-high.iloc[-1,:]
+            tt = low.iloc[-1, :] - high.iloc[-1, :]
             s = r'$R^2$ diff: '
             for k in tt.index:
-                s=s+k+f' {np.round(tt[k],5)}'
+                s = s + k + f' {np.round(tt[k], 5)}'
 
-            paper.append_fig_to_sec(fig_names=[f'{col}_low', f'{col}_high'],fig_captions=['low','high'], sec_name='Results',
+            paper.append_fig_to_sec(fig_names=[f'{col}_low', f'{col}_high'], fig_captions=['low', 'high'], sec_name='Results',
                                     main_caption=rf"The figures compare the cumulative $R^2$ of the models splitting by {col}. "
                                                  rf"Panel (a) shows the lowest third {col}, while panel (b) shows the highest {col}. "
                                                  rf"Total {s}")
@@ -363,24 +345,24 @@ class Trainer:
         ##################
 
         ## creating protfoio old way
-        def get_port_old_version(pred = 'pred',Q = 5):
+        def get_port_old_version(pred='pred', Q=5):
 
-            df=full_df.copy()
-            df['port']=df.groupby('date')[pred].apply(lambda x: pd.qcut(x,Q,labels=False,duplicates='drop'))
-            df=df.groupby(['port','date'])[name_ret].mean().reset_index()
-            m=df.groupby('port').mean()
-            s=df.groupby('port').std()
+            df = full_df.copy()
+            df['port'] = df.groupby('date')[pred].apply(lambda x: pd.qcut(x, Q, labels=False, duplicates='drop'))
+            df = df.groupby(['port', 'date'])[name_ret].mean().reset_index()
+            m = df.groupby('port').mean()
+            s = df.groupby('port').std()
 
             for port in df['port'].unique():
                 port = int(port)
-                t = df.loc[df['port']==port,:].copy()
-                t['t']=t['date'].diff().dt.days.fillna(0)
-                t['tt']=t['t'].cumsum()
-                ind=t['tt']%60==0
-                t=t.loc[ind,:]
+                t = df.loc[df['port'] == port, :].copy()
+                t['t'] = t['date'].diff().dt.days.fillna(0)
+                t['tt'] = t['t'].cumsum()
+                ind = t['tt'] % 60 == 0
+                t = t.loc[ind, :]
                 t.index = t['date']
-                r=1+t[name_ret]
-                plt.plot(r.index,r.cumprod(),label=f'Port {int(port)}',color = didi.DidiPlot.COLOR[port])
+                r = 1 + t[name_ret]
+                plt.plot(r.index, r.cumprod(), label=f'Port {int(port)}', color=didi.DidiPlot.COLOR[port])
             plt.legend()
             plt.xlabel('Date')
             plt.ylabel('Cum. Ret.')
@@ -388,57 +370,48 @@ class Trainer:
             plt.tight_layout()
             plt.savefig(paper.dir_figs + f'cum_ret_{pred}.png')
             self.plt_show()
-            m = m.rename(columns={name_ret:pred})
-            s = s.rename(columns={name_ret:pred})
+            m = m.rename(columns={name_ret: pred})
+            s = s.rename(columns={name_ret: pred})
             return m, s
 
         M = []
         S = []
-        TP = ['mw','vilk','pred']
+        TP = ['mw', 'vilk', 'pred']
         for tp in TP:
-            m,s = get_port_old_version(tp)
+            m, s = get_port_old_version(tp)
             M.append(m)
             S.append(s)
 
-        M=pd.concat(M,1)
-        k=-1
+        M = pd.concat(M, 1)
+        k = -1
         for tp in TP:
-            k+=1
+            k += 1
             plt.plot(M.index, M[tp], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
         plt.legend()
         plt.xlabel('Portfolio index')
         plt.ylabel('Port mean return')
         plt.grid()
         plt.tight_layout()
-        plt.savefig(paper.dir_figs +'comparing_mean.png')
+        plt.savefig(paper.dir_figs + 'comparing_mean.png')
         self.plt_show()
-
-
 
         paper.append_fig_to_sec(fig_names=[f'comparing_mean'], fig_captions=['Mean'], sec_name='Results',
                                 main_caption=rf"The figure above show the mean return of the portfolio split in quintile based on the models predictions.")
 
-
-
-
         paper.append_fig_to_sec(fig_names=[f'cum_ret_{pred}' for pred in TP], fig_captions=TP, sec_name='Results',
                                 main_caption=rf"The figures above show the cumulative return across time of the model sorted by pred-quintiles.")
 
-
-
         ### changing the weights
 
-        def get_port_weights(pred = 'pred',LEVERAGE = 1):
-            df=full_df.copy()
-            df['w']=(1+df[pred])**LEVERAGE
+        def get_port_weights(pred='pred', LEVERAGE=1):
+            df = full_df.copy()
+            df['w'] = (1 + df[pred]) ** LEVERAGE
 
             df['ew'] = 1
-            df['rw'] = df['w']*df[name_ret]
-            df=df.groupby('date')[['w','rw',name_ret,'ew']].sum()
-            df['r'] = df['rw']/df['w']
-            df['re'] = df[name_ret]/df['ew']
-
-
+            df['rw'] = df['w'] * df[name_ret]
+            df = df.groupby('date')[['w', 'rw', name_ret, 'ew']].sum()
+            df['r'] = df['rw'] / df['w']
+            df['re'] = df[name_ret] / df['ew']
 
             t = df.copy()
             t['date'] = t.index
@@ -448,11 +421,12 @@ class Trainer:
             t = t.loc[ind, :]
 
             def get_m(input='r'):
-                m=df[input].agg(['mean','std'])
-                m['mean'] = (1+m['mean'])**(252/self.par.data.H) -1
-                m['std'] = m['std']*np.sqrt(252/self.par.data.H)
-                m['sharp'] = m['mean']/m['std']
+                m = df[input].agg(['mean', 'std'])
+                m['mean'] = (1 + m['mean']) ** (252 / self.par.data.H) - 1
+                m['std'] = m['std'] * np.sqrt(252 / self.par.data.H)
+                m['sharp'] = m['mean'] / m['std']
                 return m
+
             get_m('r')
             get_m('re')
 
@@ -460,11 +434,11 @@ class Trainer:
 
         def get_all_weight_perf(pred='pred'):
             R = []
-            for leverage in tqdm(np.arange(1,31,1),f'loop for all weight perf {pred}'):
-                r,re, t = get_port_weights(pred=pred,LEVERAGE=leverage)
+            for leverage in tqdm(np.arange(1, 31, 1), f'loop for all weight perf {pred}'):
+                r, re, t = get_port_weights(pred=pred, LEVERAGE=leverage)
                 r.name = leverage
                 R.append(r)
-            return pd.concat(R,1).T
+            return pd.concat(R, 1).T
 
         wp = {}
         for tp in TP:
@@ -473,7 +447,7 @@ class Trainer:
 
         k = -1
         for tp in TP:
-            k+=1
+            k += 1
             df = wp[tp]
             plt.plot(df.index, df['mean'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
 
@@ -482,7 +456,7 @@ class Trainer:
         plt.ylabel('weighted portfolio mean return')
         plt.grid()
         plt.tight_layout()
-        plt.savefig(paper.dir_figs +'mean_vs_factor.png')
+        plt.savefig(paper.dir_figs + 'mean_vs_factor.png')
         self.plt_show()
 
         k = -1
@@ -503,35 +477,46 @@ class Trainer:
                                 main_caption=rf"The figures above show the mean (panel a) and sharp-ratio (panel b) return of the portfolio built on weighted by a factor of $(1+r)^{{fact}}$, "
                                              rf"where r is the predcition and fact is the factor on the x-axis.")
 
+        ##################
+        # shapeley if callculated
+        ##################
+        L = [x for x in os.listdir(self.model.res_dir) if 'shap_' in x]
+        shapely_exist = len(L) > 0
+        if shapely_exist:
+            shap = pd.DataFrame()
+            for l in tqdm(L, 'load shapeley df'):
+                shap = shap.append(pd.read_pickle(self.model.res_dir + l))
 
-        # ##################
-        # # random cut in sample
-        # ##################
-        # SIM = 1000
-        # D = []
-        # for sim in tqdm(range(SIM),'compute sim split'):
-        #     t = final[['ticker']].drop_duplicates()
-        #     t['random'] = np.random.normal(size=t.shape[0])
-        #     t.index = t['ticker']
-        #     final['random'] = final['ticker']
-        #     final['random'] = final['random'].map(t['random'].to_dict())
-        #
-        #     final['q'] = pd.qcut(final['random'], q=3, labels=False, duplicates='drop')
-        #     t=final.groupby('q').apply(r2)
-        #     d = t[2]-t[0]
-        #     D.append(d)
-        #
-        # plt.hist(D,color='k',bins=25)
-        # plt.savefig(paper.dir_figs + 'boot_strap_hist_diff.png')
-        # paper.append_fig_to_sec(fig_names=[f'boot_strap_hist_diff'], sec_name='Results',
-        #                         main_caption=rf"The figure above estimate the distribution of a 3-way split by firm.")
-        # self.plt_show()
+            ## keep only the day on the vilk sample
+            t = full_df.dropna()[['permno', 'date', 'pred', 'ret1m']]
+            shap = shap.merge(t[['permno', 'date']])
+            f = r2(t, 'pred')
+            S = {}
+            for c in shap.columns[5:]:
+                S[c] = (r2(shap, c) / f) - 1
+                # S[c] = (r2(shap,c)-f)
+            S = pd.Series(S).sort_values(ascending=True)
+            plt.barh(S.index, S.values)
+            plt.tight_layout()
+            plt.savefig(paper.dir_figs + 'shap_clean.png')
+            plt.show()
+
+
+            sk = S[S > 0]
+            sk /= sk.sum()
+            sk = sk.sort_values(ascending=True)
+            plt.barh(sk.index, sk.values)
+            plt.tight_layout()
+            plt.savefig(paper.dir_figs + 'shap_kelly.png')
+            plt.show()
+            sk = S[S > 0]
+            sk /= sk.sum()
+
+            paper.append_fig_to_sec(fig_names=[f'shap_clean', f'shap_kelly'], fig_captions=['Clean', 'Kelly'], sec_name='Results',
+                                    main_caption=rf"The figures above show the pseudo-shapely values kelly style. The first figure show the full results (panel a) while the second present the kelly subset (panel b) where we normalize the positive shapely values to 1.")
 
     def plt_show(self):
         plt.close()
-
-
-
 
 # self = Trainer()
 # self.create_paper()

@@ -39,21 +39,13 @@ par.model.output_range = 0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
 par.model.E = 10
+par.data.H = 20
 
-for H in [20,60,120]:
-    par.data.H = H
+name = 'PostVacL100_100_100_Lr0001Dropout02BS512ActreluOutRange05pLossMSECssampleFULL'
+par.name =  name
 
-    if H>30:
-        par.model.output_range = 0.5
 
-    par.update_model_name()
-
-    data = Data(par)
-    data.load_feature_kelly(True)
-    # data.load_pred_feature(True)
-
-    # train
-    trainer = Trainer(par)
-    self = trainer
-    trainer.create_paper()
+trainer = Trainer(par)
+self = trainer
+trainer.create_paper()
 

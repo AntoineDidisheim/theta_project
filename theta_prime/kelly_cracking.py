@@ -28,14 +28,14 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
-par.name_detail='KellyCracking_'
+par.name_detail='V2KellyCracking_'
 par.data.cs_sample = CSSAMPLE.KELLY
 par.model.layers = [32,16,8]
 par.model.dropout = 0.0
 par.model.output_range = 0.5
 par.model.learning_rate = 0.01
 par.model.output_pos_only =False
-par.model.regulator=True
+par.model.regulator=0.001
 # par.model.learning_rate = 0.001
 par.model.loss = Loss.MAE
 par.model.E = 5
