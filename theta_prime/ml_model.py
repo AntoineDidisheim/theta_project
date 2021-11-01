@@ -139,10 +139,10 @@ class NetworkMean:
         print(df.head())
         print(df['pred'].std())
 
-        if self.par.data.cs_sample != CSSAMPLE.KELLY:
+        # if self.par.data.cs_sample != CSSAMPLE.KELLY:
+        if True:
             shapeley = self.shapeley_oos()
             shapeley.to_pickle(self.res_dir+f'shap_{year}.p')
-
 
     def _train_year(self, year):
 

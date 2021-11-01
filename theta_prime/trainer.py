@@ -95,6 +95,7 @@ class Trainer:
         full_df = pd.DataFrame()
         for l in tqdm(L, 'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))
+        true_full = full_df.copy()
 
         ## add martin wagner
         mw = self.model.data.load_mw()
@@ -186,6 +187,37 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=['const_pred'], sec_name='Results',
 
                                 main_caption=r"The figures above show the standard deviation year per year of the predicitons. It is here to check constant predicitons. ")
+
+        ##################
+        # full sample perf
+        ##################
+        YEAR = np.sort(true_full['date'].dt.year.unique())
+        R_full = []
+        for y in tqdm(YEAR, 'compute R^2 expanding FULL'):
+            ind = df['date'].dt.year <= y
+            r = {'year': y}
+            r['pred'] = r2(true_full.loc[ind, :], 'pred')
+
+            R_full.append(r)
+        res_full = pd.DataFrame(R_full)
+        res_full.index = res_full['year']
+        del res_full['year']
+
+        # cummulative r2 plots
+        d = pd.to_datetime(res_full.index, format='%Y')
+        plt.plot(d, res_full['pred'], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0], label='perf full sample')
+        plt.plot(d, res['pred'], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1], label='perf vilk sample')
+        plt.grid()
+        plt.xlabel('Year')
+        plt.ylabel(r'Cummulative $R^2$')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'cumulative_full_sample.png')
+        plt.show()
+        self.plt_show()
+
+        del true_full
+
 
         ##################
         # stock by stock
