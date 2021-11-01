@@ -363,12 +363,10 @@ class Data:
         self.label_df = df.iloc[:,:4]
         self.x_df = df.iloc[:,4:]
 
-        for c in self.x_df.columns:
-            if self.x_df[c].dtypes!='uint8':
-                print('norm',c)
+        if self.par.data.cs_sample in [CSSAMPLE.VILK, CSSAMPLE.FULL]:
+            print('norm')
+            for c in self.x_df.columns:
                 self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
-            else:
-                print('dont norm',c)
             # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
 
 

@@ -83,7 +83,10 @@ class NetworkMean:
             L = []
             for i, l in enumerate(self.par.model.layers):
                 print(i, l)
-                dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64)
+                if self.par.model.regulator:
+                    dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64,kernel_regularizer='l1')
+                else:
+                    dense = layers.Dense(l, activation=self.par.model.activation, dtype=tf.float64)
                 L.append(dense)
                 if self.par.model.dropout >0:
                     L.append(tf.keras.layers.Dropout(rate=self.par.model.dropout, seed=12345))
@@ -98,6 +101,9 @@ class NetworkMean:
         else:
             def final_act(x):
                 return tf.nn.sigmoid(x)*self.par.model.output_range
+
+        # def final_act(x):
+        #     return x
         self.outputs = layers.Dense(1, activation=final_act, name='final_forecast', dtype=tf.float64)
         L.append(self.outputs)
         model = tf.keras.Sequential(L)

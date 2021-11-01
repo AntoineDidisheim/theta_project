@@ -77,6 +77,7 @@ class ParamsModels:
         self.tex_name = 'theta_prime'
 
         self.batch_normalization = True
+        self.regulator = True
 
 
 class DataParams:
@@ -138,6 +139,8 @@ class Params:
 
         if self.model.batch_normalization:
             n+='BatchN'
+        if self.model.regulator:
+            n+='l1'
 
         n+='Cssample'+str(self.data.cs_sample.name)
 
