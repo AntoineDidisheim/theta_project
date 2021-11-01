@@ -56,6 +56,6 @@ par.update_model_name()
 # train
 trainer = Trainer(par)
 self = trainer
-trainer.launch_training_expanding_window()
+# trainer.launch_training_expanding_window()
 trainer.create_paper()
 

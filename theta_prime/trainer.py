@@ -82,8 +82,8 @@ class Trainer:
                                                                                                                                                                                                                                                                                   rf"\item Output positive only {self.par.model.output_pos_only}" + '\n' \
                                                                                                                                                                                                                                                                                                                                                     rf"\item Batch size {self.par.model.batch_size}" + '\n' \
                                                                                                                                                                                                                                                                                                                                                                                                        rf"\item Training data {self.par.data.cs_sample.name}" + '\n' \
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                rf"\item Forecasting horizon {self.par.data.H}" + '\n'
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                rf"\item Forecasting horizon {self.par.data.H}" + '\n'+ \
+                            r"\end{enumerate}" + '\n'
         paper.append_text_to_sec(sec_name='Introduction', text=model_description.replace('_', ' '))
 
         MODEL_LIST = ['pred', 'vilk', 'mw']
@@ -186,7 +186,7 @@ class Trainer:
 
         paper.append_fig_to_sec(fig_names=['const_pred'], sec_name='Results',
 
-                                main_caption=r"The figures above show the standard deviation year per year of the predicitons. It is here to check constant predicitons. ")
+                                main_caption=r"The figure above show the standard deviation year per year of the predicitons. It is here to check constant predicitons. ")
 
         ##################
         # full sample perf
@@ -213,8 +213,12 @@ class Trainer:
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'cumulative_full_sample.png')
-        plt.show()
         self.plt_show()
+
+
+        paper.append_fig_to_sec(fig_names=['const_pred'], sec_name='Results',
+                                main_caption=r"The figures above compare our model's performance on the full sample versus the vilknoy's subsmaple. Both line show the $R^2$ computed on an expanding window.")
+
 
         del true_full
 
@@ -531,8 +535,7 @@ class Trainer:
             plt.barh(S.index, S.values)
             plt.tight_layout()
             plt.savefig(paper.dir_figs + 'shap_clean.png')
-            plt.show()
-
+            self.plt_show()
 
             sk = S[S > 0]
             sk /= sk.sum()
@@ -540,9 +543,12 @@ class Trainer:
             plt.barh(sk.index, sk.values)
             plt.tight_layout()
             plt.savefig(paper.dir_figs + 'shap_kelly.png')
-            plt.show()
+            self.plt_show()
             sk = S[S > 0]
             sk /= sk.sum()
+            # for x in shap.columns[5:]:
+            #     if '_20' in x:
+            #         print(x)
 
             paper.append_fig_to_sec(fig_names=[f'shap_clean', f'shap_kelly'], fig_captions=['Clean', 'Kelly'], sec_name='Results',
                                     main_caption=rf"The figures above show the pseudo-shapely values kelly style. The first figure show the full results (panel a) while the second present the kelly subset (panel b) where we normalize the positive shapely values to 1.")
