@@ -216,7 +216,7 @@ class Trainer:
         self.plt_show()
 
 
-        paper.append_fig_to_sec(fig_names=['const_pred'], sec_name='Results',
+        paper.append_fig_to_sec(fig_names=['cumulative_full_sample'], sec_name='Results',
                                 main_caption=r"The figures above compare our model's performance on the full sample versus the vilknoy's subsmaple. Both line show the $R^2$ computed on an expanding window.")
 
 
@@ -539,7 +539,10 @@ class Trainer:
 
             sk = S[S > 0]
             sk /= sk.sum()
+            if sk.shape[0]>20:
+                sk = sk.head()
             sk = sk.sort_values(ascending=True)
+
             plt.barh(sk.index, sk.values)
             plt.tight_layout()
             plt.savefig(paper.dir_figs + 'shap_kelly.png')
