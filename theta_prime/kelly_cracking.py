@@ -35,7 +35,7 @@ par.model.dropout = 0.0
 par.model.output_range = 0.5
 par.model.learning_rate = 0.005
 par.model.output_pos_only =False
-par.model.regulator=0.0001
+par.model.regulator=0.00001
 # par.model.learning_rate = 0.001
 par.model.loss = Loss.MAE
 par.model.E = 5
@@ -56,6 +56,6 @@ par.update_model_name()
 # train
 trainer = Trainer(par)
 self = trainer
-# trainer.launch_training_expanding_window()
+trainer.launch_training_expanding_window()
 trainer.create_paper()
 
