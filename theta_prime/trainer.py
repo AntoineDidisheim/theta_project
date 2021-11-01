@@ -540,7 +540,7 @@ class Trainer:
             sk = S[S > 0]
             sk /= sk.sum()
             if sk.shape[0]>20:
-                sk = sk.head()
+                sk = sk.head(20)
             sk = sk.sort_values(ascending=True)
 
             plt.barh(sk.index, sk.values)
