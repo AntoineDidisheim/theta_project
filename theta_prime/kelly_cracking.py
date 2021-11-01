@@ -28,7 +28,7 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
-par.name_detail='V2KellyCracking_'
+par.name_detail='V3KellyCracking_'
 par.data.cs_sample = CSSAMPLE.KELLY
 par.model.layers = [32,16,8]
 par.model.dropout = 0.0
