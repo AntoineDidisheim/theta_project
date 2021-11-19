@@ -13,7 +13,10 @@ par.data.H = 20
 data=Data(par)
 
 
-df = data.load_pred_feature(reload=False)
-print(df.head())
-print(df.columns)
+
+# df.quantile(0.99).round(2)
+# df.quantile(0.01).round(2)
+
+
+
 

@@ -244,6 +244,15 @@ class Data:
             df = pd.read_pickle(self.par.data.dir + f'raw_merge/feature_kelly_H{target_days}.p')
         return df
 
+    def load_kelly_bench(self,reload=False):
+        if reload:
+            df = pd.read_csv(self.par.data.dir + '/bench/Forecast_ML.csv')
+            df['date'] = pd.to_datetime(df['date'],format='%Y%m%d')
+            df.to_pickle(self.par.data.dir + '/bench/Forecast_ML.p')
+        else:
+            df = pd.read_pickle(self.par.data.dir + '/bench/Forecast_ML.p')
+        return df
+
     def load_pred_feature(self, reload = False):
         target_days = self.par.data.H
 

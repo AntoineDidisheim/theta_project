@@ -82,7 +82,7 @@ class Trainer:
                                                                                                                                                                                                                                                                                   rf"\item Output positive only {self.par.model.output_pos_only}" + '\n' \
                                                                                                                                                                                                                                                                                                                                                     rf"\item Batch size {self.par.model.batch_size}" + '\n' \
                                                                                                                                                                                                                                                                                                                                                                                                        rf"\item Training data {self.par.data.cs_sample.name}" + '\n' \
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                rf"\item Forecasting horizon {self.par.data.H}" + '\n'+ \
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                rf"\item Forecasting horizon {self.par.data.H}" + '\n' + \
                             r"\end{enumerate}" + '\n'
         paper.append_text_to_sec(sec_name='Introduction', text=model_description.replace('_', ' '))
 
@@ -121,6 +121,71 @@ class Trainer:
             ADD_TEXT = r' $R^2$ is defined with 0.0 as a denominator benchmark. '
         else:
             ADD_TEXT = r' $R^2$ is defined with in sample mean as a denominator benchmark. '
+
+        ##################
+        # r2 comparing to kelly (FULL CROSS SECTION)
+        ##################
+        KELLY_MODEL_LIST = ['pred', 'RFEW', 'NN4EW', 'NN3EW']
+        k = self.model.data.load_kelly_bench()
+        df = true_full.merge(k)
+        YEAR = np.sort(df['date'].dt.year.unique())
+        R = []
+        for y in tqdm(YEAR, 'compute R^2 expanding'):
+            ind = df['date'].dt.year <= y
+            r = {'year': y}
+            for c in KELLY_MODEL_LIST:
+                r[c] = r2(df.loc[ind, :], c)
+            R.append(r)
+        res = pd.DataFrame(R)
+        res.index = res['year']
+        del res['year']
+
+        # cummulative r2 plots
+        d = pd.to_datetime(res.index, format='%Y')
+        for i, c in enumerate(KELLY_MODEL_LIST):
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+        plt.grid()
+        plt.xlabel('Year')
+        plt.ylabel(r'Cummulative $R^2$')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'KELLY_cumulative_r2.png')
+        self.plt_show()
+
+        ##################
+        # kelly benchmark smaller subsample
+        ##################
+        df = df.loc[~pd.isna(df['vilk']), :]
+
+        YEAR = np.sort(df['date'].dt.year.unique())
+        R = []
+        for y in tqdm(YEAR, 'compute R^2 expanding'):
+            ind = df['date'].dt.year <= y
+            r = {'year': y}
+            for c in KELLY_MODEL_LIST:
+                r[c] = r2(df.loc[ind, :], c)
+            R.append(r)
+        res = pd.DataFrame(R)
+        res.index = res['year']
+        del res['year']
+
+        # cummulative r2 plots
+        d = pd.to_datetime(res.index, format='%Y')
+        for i, c in enumerate(KELLY_MODEL_LIST):
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+        plt.grid()
+        plt.xlabel('Year')
+        plt.ylabel(r'Cummulative $R^2$')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'KELLY_SMALL_cumulative_r2.png')
+        self.plt_show()
+
+        # We now add two figure side by side
+        paper.append_fig_to_sec(fig_names=['KELLY_cumulative_r2', 'KELLY_SMALL_cumulative_r2'], sec_name='Results',
+                                fig_captions=['Cumulative', 'Year per year'],  # you can add individual caption to each figure (leave empty for no label)
+                                main_caption=r"The figures above show the $R^2$ of our model against some of the best model from Kelly's paper. "
+                                             r"The first figure show the result on the large cross section of assets, the second only those present also in the vilknoy and MW papers. " + ADD_TEXT)
 
         ##################
         # r2 plots
@@ -215,13 +280,10 @@ class Trainer:
         plt.savefig(paper.dir_figs + 'cumulative_full_sample.png')
         self.plt_show()
 
-
         paper.append_fig_to_sec(fig_names=['cumulative_full_sample'], sec_name='Results',
                                 main_caption=r"The figures above compare our model's performance on the full sample versus the vilknoy's subsmaple. Both line show the $R^2$ computed on an expanding window.")
 
-
         del true_full
-
 
         ##################
         # stock by stock
@@ -485,11 +547,11 @@ class Trainer:
         for tp in TP:
             k += 1
             df = wp[tp]
-            plt.plot(df.index, df['mean'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
+            plt.plot(df['std'], df['mean'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
 
         plt.legend()
-        plt.xlabel('Weight factor')
-        plt.ylabel('weighted portfolio mean return')
+        plt.xlabel('Portfolio std')
+        plt.ylabel('Portfolio mean')
         plt.grid()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'mean_vs_factor.png')
@@ -510,8 +572,8 @@ class Trainer:
         self.plt_show()
 
         paper.append_fig_to_sec(fig_names=[f'mean_vs_factor', f'sharp_vs_factor'], fig_captions=['Mean', 'Sharp'], sec_name='Results',
-                                main_caption=rf"The figures above show the mean (panel a) and sharp-ratio (panel b) return of the portfolio built on weighted by a factor of $(1+r)^{{fact}}$, "
-                                             rf"where r is the predcition and fact is the factor on the x-axis.")
+                                main_caption=rf"The figures above show the mean vs std (panel a) and sharp-ratio (panel b) return of the portfolio built on weighted by a factor of $(1+r)^{{fact}}$, "
+                                             rf"where r is the predcition and fact is the factor on the x-axis of panel b.")
 
         ##################
         # shapeley if callculated
@@ -529,7 +591,7 @@ class Trainer:
             f = r2(t, 'pred')
             S = {}
             for c in shap.columns[5:]:
-                S[c] = (r2(shap, c) / f) - 1
+                S[c] = (f / r2(shap, c)) - 1
                 # S[c] = (r2(shap,c)-f)
             S = pd.Series(S).sort_values(ascending=True)
             plt.barh(S.index, S.values)
@@ -539,7 +601,7 @@ class Trainer:
 
             sk = S[S > 0]
             sk /= sk.sum()
-            if sk.shape[0]>20:
+            if sk.shape[0] > 20:
                 sk = sk.head(20)
             sk = sk.sort_values(ascending=True)
 
@@ -555,6 +617,47 @@ class Trainer:
 
             paper.append_fig_to_sec(fig_names=[f'shap_clean', f'shap_kelly'], fig_captions=['Clean', 'Kelly'], sec_name='Results',
                                     main_caption=rf"The figures above show the pseudo-shapely values kelly style. The first figure show the full results (panel a) while the second present the kelly subset (panel b) where we normalize the positive shapely values to 1.")
+
+            ## shapeley clean year per year
+            S_year = []
+            for y in tqdm(YEAR, 'shapely year per year'):
+                f = r2(t.loc[t['date'].dt.year == y, :], 'pred')
+                S = {}
+                for c in shap.columns[5:]:
+                    S[c] = (f / r2(shap.loc[shap['date'].dt.year == y, :], c)) - 1
+                    # S[c] = (r2(shap,c)-f)
+                S = pd.Series(S).sort_values(ascending=True)
+                print(y, S.head())
+                plt.barh(S.index, S.values)
+                plt.tight_layout()
+                plt.savefig(paper.dir_figs + f'shap_clean_{y}.png')
+                self.plt_show()
+                S.name = y
+                S_year.append(S)
+            t = pd.concat(S_year, 1)
+            S = t.max(1).sort_values(ascending=True)
+            plt.barh(S.index, S.values)
+            plt.tight_layout()
+            plt.savefig(paper.dir_figs + 'shap_min.png')
+            self.plt_show()
+
+            paper.append_fig_to_sec(fig_names=[f'shap_min'], sec_name='Results',
+                                    main_caption=rf"The figures above show the minimum shapely value caluclated year by year. It shows the maximum positive impact a feature had on a given year.")
+
+            N = []
+            L = []
+            for c in t.index:
+                t.loc[c,:].plot(color='k')
+                plt.tight_layout()
+                plt.title(c)
+                plt.savefig(paper.dir_figs + f'shape_ts_{c}.png')
+                self.plt_show()
+                N.append(f'shape_ts_{c}')
+                L.append(c.replace('_',' '))
+
+            paper.append_fig_to_sec(fig_names=N,fig_captions=L, sec_name='Results', size = r"0.15\linewidth",
+                                    main_caption=rf"The figures above show the time series of shapely value year per year .")
+
 
     def plt_show(self):
         plt.close()
