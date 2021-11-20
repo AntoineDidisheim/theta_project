@@ -86,8 +86,10 @@ class Trainer:
                             r"\end{enumerate}" + '\n'
         paper.append_text_to_sec(sec_name='Introduction', text=model_description.replace('_', ' '))
 
-        MODEL_LIST = ['pred', 'vilk', 'mw']
-        m_dict = {'pred': 'NNET', 'vilk': 'vilk', 'mw': 'mw'}
+        # MODEL_LIST = ['pred', 'vilk', 'mw']
+        MODEL_LIST = ['pred', 'mw']
+        MODEL_ALL =  MODEL_LIST+['NN4EW']
+        m_dict = {'pred': 'DNN', 'vilk': 'vilk', 'mw': 'Martin&Wagner', 'NN4EW':'Gu&Kelly'}
 
         L = [x for x in os.listdir(self.model.res_dir) if 'perf_' in x]
         print('look for data in dir', self.model.res_dir)
@@ -95,13 +97,15 @@ class Trainer:
         full_df = pd.DataFrame()
         for l in tqdm(L, 'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))
-        true_full = full_df.copy()
+
 
         ## add martin wagner
         mw = self.model.data.load_mw()
         full_df = full_df.merge(mw, how='left')
+        true_full = full_df.copy()
+
         full_df = full_df.loc[~pd.isna(full_df['mw']), :]
-        full_df = full_df.loc[~pd.isna(full_df['vilk']), :]
+        # full_df = full_df.loc[~pd.isna(full_df['vilk']), :]
         full_df = full_df.reset_index(drop=True)
 
         name_ret = self.name_ret
@@ -111,10 +115,25 @@ class Trainer:
                 r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             else:
                 r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - (1.06 ** (self.par.data.H / 252) - 1)) ** 2).sum()
-                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df_[name_ret]) ** 2).sum()
-                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df[name_ret].mean()) ** 2).sum()
-                # r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             return r2_pred
+
+        def r2_against_cs(df_, col='pred'):
+            if self.par.data.H == 20:
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df_.groupby('date')[col].transform('mean')) ** 2).sum()
+            return r2_pred
+
+        def r2_against_yearly(df_, col='pred'):
+            if self.par.data.H == 20:
+                r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df_.groupby('year')[col].transform('mean')) ** 2).sum()
+            return r2_pred
+
+
+        def r2_of_cs(df_, col='pred'):
+            if self.par.data.H == 20:
+                r2_pred = 1 - ((df_[name_ret] - df_.groupby('date')[col].transform('mean')) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
+            return r2_pred
+
+
 
         # df[name_ret].mean()
         if self.par.data.H == 20:
@@ -125,7 +144,7 @@ class Trainer:
         ##################
         # r2 comparing to kelly (FULL CROSS SECTION)
         ##################
-        KELLY_MODEL_LIST = ['pred', 'RFEW', 'NN4EW', 'NN3EW']
+        KELLY_MODEL_LIST = ['pred', 'NN4EW']
         k = self.model.data.load_kelly_bench()
         df = true_full.merge(k)
         YEAR = np.sort(df['date'].dt.year.unique())
@@ -143,7 +162,7 @@ class Trainer:
         # cummulative r2 plots
         d = pd.to_datetime(res.index, format='%Y')
         for i, c in enumerate(KELLY_MODEL_LIST):
-            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
         plt.xlabel('Year')
         plt.ylabel(r'Cummulative $R^2$')
@@ -152,18 +171,23 @@ class Trainer:
         plt.savefig(paper.dir_figs + 'KELLY_cumulative_r2.png')
         self.plt_show()
 
+
         ##################
         # kelly benchmark smaller subsample
         ##################
-        df = df.loc[~pd.isna(df['vilk']), :]
+
+        df = true_full.loc[~pd.isna(true_full['mw']), :].merge(k,how='outer')
+        df = df.loc[~pd.isna(df['ret1m']),:]
+        # df = df.loc[~pd.isna(df['mw']), :]
 
         YEAR = np.sort(df['date'].dt.year.unique())
         R = []
         for y in tqdm(YEAR, 'compute R^2 expanding'):
             ind = df['date'].dt.year <= y
             r = {'year': y}
-            for c in KELLY_MODEL_LIST:
-                r[c] = r2(df.loc[ind, :], c)
+            for c in MODEL_ALL:
+                ind_na = ~pd.isna(df[c])
+                r[c] = r2(df.loc[ind & ind_na, :], c)
             R.append(r)
         res = pd.DataFrame(R)
         res.index = res['year']
@@ -171,8 +195,8 @@ class Trainer:
 
         # cummulative r2 plots
         d = pd.to_datetime(res.index, format='%Y')
-        for i, c in enumerate(KELLY_MODEL_LIST):
-            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+        for i, c in enumerate(MODEL_ALL):
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
         plt.xlabel('Year')
         plt.ylabel(r'Cummulative $R^2$')
@@ -187,13 +211,106 @@ class Trainer:
                                 main_caption=r"The figures above show the $R^2$ of our model against some of the best model from Kelly's paper. "
                                              r"The first figure show the result on the large cross section of assets, the second only those present also in the vilknoy and MW papers. " + ADD_TEXT)
 
+        df_kelly = df.copy()
+
+        ##################
+        # predict against the cross section prediction
+        ##################
+
+        df = true_full.loc[~pd.isna(true_full['mw']), :].merge(k, how='outer')
+        df = df.loc[~pd.isna(df['ret1m']), :]
+        # df = df.loc[~pd.isna(df['mw']), :]
+
+        YEAR = np.sort(df['date'].dt.year.unique())
+        R = []
+        for y in tqdm(YEAR, 'compute R^2 expanding'):
+            ind = df['date'].dt.year <= y
+            r = {'year': y}
+            for c in MODEL_ALL:
+                ind_na = ~pd.isna(df[c])
+                r[c] = r2_against_cs(df.loc[ind & ind_na, :], c)
+            R.append(r)
+        res = pd.DataFrame(R)
+        res.index = res['year']
+        del res['year']
+
+        # cummulative r2 plots
+        d = pd.to_datetime(res.index, format='%Y')
+        for i, c in enumerate(MODEL_ALL):
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
+        plt.grid()
+        plt.xlabel('Year')
+        plt.ylabel(r'Cummulative $R^2$')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'small_vs_mean_pred.png')
+        self.plt_show()
+
+        ### vs pred by year
+        df['year'] = df['date'].dt.year
+        YEAR = np.sort(df['date'].dt.year.unique())
+        R = []
+        for y in tqdm(YEAR, 'compute R^2 expanding'):
+            ind = df['date'].dt.year <= y
+            r = {'year': y}
+            for c in MODEL_ALL:
+                ind_na = ~pd.isna(df[c])
+                r[c] = r2_against_yearly(df.loc[ind & ind_na, :], c)
+            R.append(r)
+        res = pd.DataFrame(R)
+        res.index = res['year']
+        del res['year']
+
+        # cummulative r2 plots
+        d = pd.to_datetime(res.index, format='%Y')
+        for i, c in enumerate(MODEL_ALL):
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
+        plt.grid()
+        plt.xlabel('Year')
+        plt.ylabel(r'Cummulative $R^2$')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'small_vs_mean_pred_year.png')
+        self.plt_show()
+
+
+        ### pred by month group
+        YEAR = np.sort(df['date'].dt.year.unique())
+        R = []
+        for y in tqdm(YEAR, 'compute R^2 expanding'):
+            ind = df['date'].dt.year <= y
+            r = {'year': y}
+            for c in MODEL_ALL:
+                ind_na = ~pd.isna(df[c])
+                r[c] = r2_of_cs(df.loc[ind & ind_na, :], c)
+            R.append(r)
+        res = pd.DataFrame(R)
+        res.index = res['year']
+        del res['year']
+
+        # cummulative r2 plots
+        d = pd.to_datetime(res.index, format='%Y')
+        for i, c in enumerate(MODEL_ALL):
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
+        plt.grid()
+        plt.xlabel('Year')
+        plt.ylabel(r'Cummulative $R^2$')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(paper.dir_figs + 'small_mean_pred.png')
+        self.plt_show()
+
+        # We now add two figure side by side
+        paper.append_fig_to_sec(fig_names=['small_vs_mean_pred','small_vs_mean_pred_year'], sec_name='Results',
+                                fig_captions=['vs month', 'vs year'],  # you can add individual caption to each figure (leave empty for no label)
+                                main_caption=r"The figures above show the $R^2$ of the models measured against the mean prediction of the model. Panel a): daily average , and Panel b): yearly average.")
+
+        df_kelly = df.copy()
+
         ##################
         # r2 plots
         ##################
-
         df = full_df.dropna().copy()
-        r2(df, 'vilk')
-
         YEAR = np.sort(df['date'].dt.year.unique())
         R = []
         for y in tqdm(YEAR, 'compute R^2 expanding'):
@@ -210,7 +327,7 @@ class Trainer:
         # cummulative r2 plots
         d = pd.to_datetime(res.index, format='%Y')
         for i, c in enumerate(MODEL_LIST):
-            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+            plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
         plt.xlabel('Year')
         plt.ylabel(r'Cummulative $R^2$')
@@ -221,9 +338,9 @@ class Trainer:
 
         # year per year
         df['year'] = df['date'].dt.year
-        for i, c in enumerate(['pred', 'vilk', 'mw']):
+        for i, c in enumerate(MODEL_LIST):
             t = df.groupby('year').apply(lambda x: r2(x, col=c))
-            plt.plot(d, t, color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c if c != 'pred' else 'NNET')
+            plt.plot(d, t, color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
         plt.xlabel('Year')
         plt.ylabel(r'Year per Year $R^2$')
@@ -237,11 +354,13 @@ class Trainer:
                                 fig_captions=['Cumulative', 'Year per year'],  # you can add individual caption to each figure (leave empty for no label)
                                 main_caption=r"The figures above show the $R^2$ of the main models. " + ADD_TEXT)
 
-        tt = df.groupby('year')[['pred', 'mw', 'vilk']].std()
-        plt.plot(tt.index, tt['pred'], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0], label='us')
-        plt.plot(tt.index, tt['mw'], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1], label='MW')
-        plt.plot(tt.index, tt['vilk'], color=didi.DidiPlot.COLOR[2], linestyle=didi.DidiPlot.LINE_STYLE[2], label='vilk')
-        plt.grid()
+
+        df_kelly['year'] = df_kelly['date'].dt.year
+        tt = df_kelly.groupby('year')[MODEL_ALL].std()
+        for k, c in enumerate(MODEL_ALL):
+            print(k,c)
+            plt.plot(tt.index, tt[c], color=didi.DidiPlot.COLOR[k], linestyle=didi.DidiPlot.LINE_STYLE[k], label=m_dict[c])
+            plt.grid()
         plt.xlabel('Year')
         plt.ylabel(r'Pred. std')
         plt.legend()
@@ -253,46 +372,14 @@ class Trainer:
 
                                 main_caption=r"The figure above show the standard deviation year per year of the predicitons. It is here to check constant predicitons. ")
 
-        ##################
-        # full sample perf
-        ##################
-        YEAR = np.sort(true_full['date'].dt.year.unique())
-        R_full = []
-        for y in tqdm(YEAR, 'compute R^2 expanding FULL'):
-            ind = df['date'].dt.year <= y
-            r = {'year': y}
-            r['pred'] = r2(true_full.loc[ind, :], 'pred')
-
-            R_full.append(r)
-        res_full = pd.DataFrame(R_full)
-        res_full.index = res_full['year']
-        del res_full['year']
-
-        # cummulative r2 plots
-        d = pd.to_datetime(res_full.index, format='%Y')
-        plt.plot(d, res_full['pred'], color=didi.DidiPlot.COLOR[0], linestyle=didi.DidiPlot.LINE_STYLE[0], label='perf full sample')
-        plt.plot(d, res['pred'], color=didi.DidiPlot.COLOR[1], linestyle=didi.DidiPlot.LINE_STYLE[1], label='perf vilk sample')
-        plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(paper.dir_figs + 'cumulative_full_sample.png')
-        self.plt_show()
-
-        paper.append_fig_to_sec(fig_names=['cumulative_full_sample'], sec_name='Results',
-                                main_caption=r"The figures above compare our model's performance on the full sample versus the vilknoy's subsmaple. Both line show the $R^2$ computed on an expanding window.")
-
-        del true_full
 
         ##################
         # stock by stock
         ##################
         S = []
-        df['year'] = df['date'].dt.year
-        for i, c in enumerate(MODEL_LIST):
-            t = df.groupby('permno').apply(lambda x: r2(x, col=c))
-            plt.hist(t, color=didi.DidiPlot.COLOR[i], alpha=0.5, label=c if c != 'pred' else 'NNET', bins=50, density=True)
+        for i, c in enumerate(MODEL_ALL):
+            t = df_kelly.loc[~pd.isna(df_kelly[c]),:].groupby('permno').apply(lambda x: r2(x, col=c))
+            plt.hist(t, color=didi.DidiPlot.COLOR[i], alpha=0.5, label=m_dict[c], bins=50, density=True)
             t.name = c
             S.append(t)
         plt.grid()
@@ -312,31 +399,6 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=['hist_stock_r2', 'box_stock_r2'], sec_name='Results',
                                 main_caption=r"The figures compare the $R^2$ firm by firm of each model with histograms (a) and boxplots (b)")
 
-        ### violin noow :)
-        violin = pd.DataFrame()
-        for v in MODEL_LIST:
-            t1 = t[[v]].copy().rename(columns={v: r'$R^2$ per firm'})
-            t1['model'] = m_dict[v]
-            violin = violin.append(t1)
-        del t1
-
-        mkt = self.model.data.load_additional_crsp()
-        mkt = mkt.groupby('permno').mean().reset_index()
-        mkt['Market cap. Quintile'] = pd.qcut(mkt['mkt_cap'], 5, labels=False, duplicates='drop')
-        violin = violin.reset_index().merge(mkt)
-
-        sns.violinplot(data=violin, x='Market cap. Quintile', y=r'$R^2$ per firm', hue='model', palette='muted')
-        plt.savefig(paper.dir_figs + 'SIZE_violin_stock_r2.png')
-        self.plt_show()
-
-        sns.boxplot(data=violin, x='Market cap. Quintile', y=r'$R^2$ per firm', hue='model', palette='muted')
-        plt.tight_layout()
-        plt.savefig(paper.dir_figs + 'SIZE_box_stock_r2.png')
-        self.plt_show()
-
-        paper.append_fig_to_sec(fig_names=['SIZE_violin_stock_r2', 'SIZE_box_stock_r2'], sec_name='Results',
-                                main_caption=r"The figures compare the $R^2$ firm by firm sorted by market cap. size of each model with violin plots (a) and boxplots (b). "
-                                             r"For both figure, we compute the average market size across the sample to determine the size quintile of the firm.")
 
         ##################
         # correlation of perf
@@ -348,6 +410,8 @@ class Trainer:
             ax = ax or plt.gca()
             ax.annotate(f'ρ = {r:.2f}', xy=(.1, .9), xycoords=ax.transAxes)
 
+        t=t.fillna(0.0)
+        t.columns = [m_dict[c] for c in t.columns]
         g = sns.pairplot(t)
         g.map_lower(corrfunc)
         plt.tight_layout()
@@ -360,11 +424,14 @@ class Trainer:
         df['ym'] = df['date'].dt.year * 100 + df['date'].dt.month
 
         ym_r2 = []
-        for v in MODEL_LIST:
-            tt = df.groupby(['ym']).apply(lambda x: r2(x, v))
+        df_kelly['ym'] = df_kelly['date'].dt.year*100+df_kelly['date'].dt.month
+        for v in MODEL_ALL:
+            tt = df_kelly.loc[~pd.isna(df_kelly[v]),:].groupby(['ym']).apply(lambda x: r2(x, v))
             tt.name = m_dict[v]
             ym_r2.append(tt)
         ym_r2 = pd.DataFrame(ym_r2).T
+        ym_r2=ym_r2.fillna(0.0)
+        # ym_r2.columns = [m_dict[c] for c in ym_r2.columns]
         g = sns.pairplot(ym_r2)
         g.map_lower(corrfunc)
 
@@ -384,15 +451,16 @@ class Trainer:
         comp = self.model.data.load_compustat(True)
         comp_col = list(comp.columns[2:])
         df['year'] = df['date'].dt.year
-        final = df.merge(comp)
+        final = df_kelly.merge(comp)
 
         def get_expanding_r2(temp):
             R = []
             for y in tqdm(YEAR, 'compute R^2 expanding'):
                 ind = temp['date'].dt.year <= y
                 r = {'year': y}
-                for c in MODEL_LIST:
-                    r[c] = r2(temp.loc[ind, :], c)
+                for c in MODEL_ALL:
+                    ind_na = ~pd.isna(temp[c])
+                    r[c] = r2(temp.loc[ind&ind_na, :], c)
                 R.append(r)
             res = pd.DataFrame(R)
             res.index = res['year']
@@ -402,8 +470,8 @@ class Trainer:
         def plot_expanding_r2(res, y_min, y_max):
             # cummulative r2 plots
             d = pd.to_datetime(res.index, format='%Y')
-            for i, c in enumerate(MODEL_LIST):
-                plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=c)
+            for i, c in enumerate(MODEL_ALL):
+                plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
             plt.grid()
             plt.xlabel('Year')
             plt.ylabel(r'Cummulative $R^2$')
@@ -444,8 +512,9 @@ class Trainer:
 
         ## creating protfoio old way
         def get_port_old_version(pred='pred', Q=5):
-
             df = full_df.copy()
+            df = df.loc[~pd.isna(df[pred]),:]
+            df = df.loc[~pd.isna(df['ret1m']),:]
             df['port'] = df.groupby('date')[pred].apply(lambda x: pd.qcut(x, Q, labels=False, duplicates='drop'))
             df = df.groupby(['port', 'date'])[name_ret].mean().reset_index()
             m = df.groupby('port').mean()
@@ -474,15 +543,15 @@ class Trainer:
 
         M = []
         S = []
-        TP = ['mw', 'vilk', 'pred']
-        for tp in TP:
+
+        for tp in MODEL_LIST:
             m, s = get_port_old_version(tp)
             M.append(m)
             S.append(s)
 
         M = pd.concat(M, 1)
         k = -1
-        for tp in TP:
+        for tp in MODEL_LIST:
             k += 1
             plt.plot(M.index, M[tp], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
         plt.legend()
@@ -496,13 +565,15 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=[f'comparing_mean'], fig_captions=['Mean'], sec_name='Results',
                                 main_caption=rf"The figure above show the mean return of the portfolio split in quintile based on the models predictions.")
 
-        paper.append_fig_to_sec(fig_names=[f'cum_ret_{pred}' for pred in TP], fig_captions=TP, sec_name='Results',
+        paper.append_fig_to_sec(fig_names=[f'cum_ret_{pred}' for pred in MODEL_LIST], fig_captions=MODEL_LIST, sec_name='Results',
                                 main_caption=rf"The figures above show the cumulative return across time of the model sorted by pred-quintiles.")
 
         ### changing the weights
 
         def get_port_weights(pred='pred', LEVERAGE=1):
             df = full_df.copy()
+            df = df.loc[~pd.isna(df[pred]),:]
+            df = df.loc[~pd.isna(df['ret1m']),:]
             df['w'] = (1 + df[pred]) ** LEVERAGE
 
             df['ew'] = 1
@@ -532,33 +603,43 @@ class Trainer:
 
         def get_all_weight_perf(pred='pred'):
             R = []
-            for leverage in tqdm(np.arange(1, 31, 1), f'loop for all weight perf {pred}'):
+            for leverage in tqdm(np.arange(1, 41, 1), f'loop for all weight perf {pred}'):
                 r, re, t = get_port_weights(pred=pred, LEVERAGE=leverage)
                 r.name = leverage
                 R.append(r)
             return pd.concat(R, 1).T
 
         wp = {}
-        for tp in TP:
+        for tp in MODEL_LIST:
             t = get_all_weight_perf(tp)
             wp[tp] = t
 
         k = -1
-        for tp in TP:
+        min_ = 0
+        max_ = 100
+        min_y = 0
+        max_y = 100
+        for tp in MODEL_LIST:
             k += 1
             df = wp[tp]
-            plt.plot(df['std'], df['mean'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
+            min_ = max(min_,df['std'].min())
+            max_ = min(max_,df['std'].max())
+            min_y = max(min_y,df['mean'].min())
+            max_y = min(max_y,df['mean'].max())
+            plt.plot(df['std'], df['mean'], label=m_dict[tp], color=didi.DidiPlot.COLOR[k])
 
         plt.legend()
         plt.xlabel('Portfolio std')
         plt.ylabel('Portfolio mean')
+        plt.xlim(min_,max_)
+        plt.ylim(min_y-0.005,max_y+0.005)
         plt.grid()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'mean_vs_factor.png')
         self.plt_show()
 
         k = -1
-        for tp in TP:
+        for tp in MODEL_LIST:
             k += 1
             df = wp[tp]
             plt.plot(df.index, df['sharp'], label=f'{tp}', color=didi.DidiPlot.COLOR[k])

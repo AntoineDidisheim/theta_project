@@ -20,10 +20,6 @@ import seaborn as sns
 from scipy.stats import pearsonr
 import shutil
 
-
-
-
-
 if 'nv-' in socket.gethostname():
     import matplotlib
     matplotlib.use('Agg')

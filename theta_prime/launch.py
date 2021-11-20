@@ -26,15 +26,23 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
+par.name_detail='PostVac'
 par.data.cs_sample = CSSAMPLE.FULL
-# par.model.layers = [100,100,100]
-# par.model.dropout = 0.2
+par.model.layers = [100,100,100]
+par.model.dropout = 0.2
+par.model.output_range=0.5
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
-par.data.H = 60
+par.data.H = 20
+par.model.batch_normalization = False
+par.model.regulator = False
 
 par.update_model_name()
-# par.name = 'defaultL64_32_16_Lr0001Dropout001BS512ActreluOutRange01pLossMSEH120CssampleFULL'
+name = 'PostVacL100_100_100_Lr0001Dropout02BS512ActreluOutRange05pLossMSECssampleFULL'
+print(par.name == name)
+print(par.name)
+print(name)
+
 
 data = Data(par)
 # data.load_all_price(True)
