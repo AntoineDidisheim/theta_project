@@ -253,6 +253,74 @@ class Data:
             df = pd.read_pickle(self.par.data.dir + '/bench/Forecast_ML.p')
         return df
 
+    def load_lstm_feature(self, reload=False):
+        target_days = self.par.data.H
+
+        if reload:
+            df = self.load_all_price()
+            # df = df.head(1000000)
+            pred_col = []
+
+            print('####################', 'start pred feature pr-processing')
+            for v in ['mean', 'median']:
+                print('###############', v)
+                if target_days == 20:
+                    name_ret = 'ret1m'
+                if target_days == 60:
+                    name_ret = 'ret3m'
+                if target_days == 120:
+                    name_ret = 'ret6m'
+                df = df.sort_values(['date', 'permno']).reset_index(drop=True)
+                ## mean ret over last 3 month
+                df.index = df['date']
+                t = df.groupby('permno')[f'{name_ret}_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: f'pred_{v}'})
+                print(t)
+                df = df.reset_index(drop=True)
+                df = df.merge(t, how='left')
+
+                ind = (~pd.isna(df[name_ret])) & (~pd.isna(df[f'pred_{v}']))
+                df = df.loc[ind, :]
+                df = df.reset_index(drop=True)
+
+                df[f'err_{v}'] = (df[f'pred_{v}'] - df[f'{name_ret}_old']) ** 2
+                pred_col.append(f'pred_{v}')
+                pred_col.append(f'err_{v}')
+
+            df = df.sort_values(['permno','date']).reset_index(drop=True)
+            # start by pushing everything into the future, once.
+            for c in pred_col:
+                pass
+            df = df.dropna()
+
+            print('start creating the extra shift')
+            df[c]=df.groupby('permno')[c].shift(1)
+            T = np.arange(20,20*13,20)
+            m_name = {}
+            for c in pred_col:
+                l = [c]
+                for t in T:
+                    n = c+f'_{t}'
+                    l.append(n)
+                    df[n] = df.groupby('permno')[c].shift(t)
+                m_name[c] = l
+            df = df.dropna()
+
+            print('create the list for matrix stack')
+            X = []
+            for c in pred_col:
+                X.append(df[m_name[c]].values)
+            print('run the stack')
+            X=np.stack(X,2)
+            df = df[['permno', 'date', 'ticker', 'ret1m']]
+            print('start saving')
+            df.to_pickle(self.par.data.dir + f'raw_merge/label_LSTM_H{target_days}.p')
+            np.save(arr=X,file=self.par.data.dir + f'raw_merge/X_LSTM_H{target_days}.npy')
+            print('all done')
+        else:
+            df = pd.read_pickle(self.par.data.dir + f'raw_merge/label_LSTM_H{target_days}.p')
+            X= np.load(file=self.par.data.dir + f'raw_merge/X_LSTM_H{target_days}.npz')
+        return df, X
+
     def load_pred_feature(self, reload = False):
         target_days = self.par.data.H
 
@@ -394,8 +462,10 @@ class Data:
         print(f'Set training year {year}', flush=True)
 
 
-
-self = Data(Params())
+par = Params()
+par.model.model_type = ModelType.LSTM
+self = Data(par)
+self.load_lstm_feature(reload=True)
 # self.load_all_price(True)
 # self.load_pred_feature(True)
 # self.load_vilknoy(True)

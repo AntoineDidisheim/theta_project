@@ -41,6 +41,9 @@ class CSSAMPLE(Enum):
     VILK = 2
     KELLY = 3
 
+class ModelType(Enum):
+    DNN = 1
+    LSTM = 2
 
 
 
@@ -58,8 +61,7 @@ class ParamsModels:
         # self.kernel = RBF(length_scale=100)
         self.save_dir = './model_save/'
         self.res_dir = './res/'
-        # self.model_type = 'deep'
-        self.model_type = 'nnet'
+        self.model_type = ModelType.DNN
         self.E = 3
         #
         self.layers = [64, 32, 16]
@@ -78,6 +80,8 @@ class ParamsModels:
 
         self.batch_normalization = True
         self.regulator = True
+
+
 
 
 class DataParams:
