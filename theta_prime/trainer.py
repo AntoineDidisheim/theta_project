@@ -15,9 +15,9 @@ import seaborn as sns
 from scipy.stats import pearsonr
 import shutil
 import tensorflow as tf
+import matplotlib
 
 par = Params()
-
 
 class Trainer:
     def __init__(self, par=Params()):
@@ -88,8 +88,8 @@ class Trainer:
 
         # MODEL_LIST = ['pred', 'vilk', 'mw']
         MODEL_LIST = ['pred', 'mw']
-        MODEL_ALL =  MODEL_LIST+['NN4EW']
-        m_dict = {'pred': 'DNN', 'vilk': 'vilk', 'mw': 'Martin&Wagner', 'NN4EW':'Gu&Kelly'}
+        MODEL_ALL = MODEL_LIST + ['NN4EW']
+        m_dict = {'pred': 'DNN', 'vilk': 'vilk', 'mw': 'Martin&Wagner', 'NN4EW': 'Gu&Kelly'}
 
         L = [x for x in os.listdir(self.model.res_dir) if 'perf_' in x]
         print('look for data in dir', self.model.res_dir)
@@ -97,7 +97,6 @@ class Trainer:
         full_df = pd.DataFrame()
         for l in tqdm(L, 'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))
-
 
         ## add martin wagner
         mw = self.model.data.load_mw()
@@ -127,13 +126,10 @@ class Trainer:
                 r2_pred = 1 - ((df_[name_ret] - df_[col]) ** 2).sum() / ((df_[name_ret] - df_.groupby('year')[col].transform('mean')) ** 2).sum()
             return r2_pred
 
-
         def r2_of_cs(df_, col='pred'):
             if self.par.data.H == 20:
                 r2_pred = 1 - ((df_[name_ret] - df_.groupby('date')[col].transform('mean')) ** 2).sum() / ((df_[name_ret] - 0.0) ** 2).sum()
             return r2_pred
-
-
 
         # df[name_ret].mean()
         if self.par.data.H == 20:
@@ -147,6 +143,11 @@ class Trainer:
         KELLY_MODEL_LIST = ['pred', 'NN4EW']
         k = self.model.data.load_kelly_bench()
         df = true_full.merge(k)
+
+        # temp = self.model.data.load_additional_crsp(reload=True)
+        # df.merge(temp).to_pickle('res/res_kelly.p')
+        # true_full.merge(temp).to_pickle('res/res_vilk.p')
+
         YEAR = np.sort(df['date'].dt.year.unique())
         R = []
         for y in tqdm(YEAR, 'compute R^2 expanding'):
@@ -164,20 +165,19 @@ class Trainer:
         for i, c in enumerate(KELLY_MODEL_LIST):
             plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
+        # plt.xlabel('Year')
+        plt.ylabel(r'$R^2_{oos}$')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'KELLY_cumulative_r2.png')
         self.plt_show()
 
-
         ##################
         # kelly benchmark smaller subsample
         ##################
 
-        df = true_full.loc[~pd.isna(true_full['mw']), :].merge(k,how='outer')
-        df = df.loc[~pd.isna(df['ret1m']),:]
+        df = true_full.loc[~pd.isna(true_full['mw']), :].merge(k, how='outer')
+        df = df.loc[~pd.isna(df['ret1m']), :]
         # df = df.loc[~pd.isna(df['mw']), :]
 
         YEAR = np.sort(df['date'].dt.year.unique())
@@ -198,8 +198,8 @@ class Trainer:
         for i, c in enumerate(MODEL_ALL):
             plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
+        # plt.xlabel('Year')
+        plt.ylabel(r'$R^2_{oos}$')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'KELLY_SMALL_cumulative_r2.png')
@@ -239,8 +239,8 @@ class Trainer:
         for i, c in enumerate(MODEL_ALL):
             plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
+        # plt.xlabel('Year')
+        plt.ylabel(r'$R^2_{oos}$')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'small_vs_mean_pred.png')
@@ -266,13 +266,12 @@ class Trainer:
         for i, c in enumerate(MODEL_ALL):
             plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
+        # plt.xlabel('Year')
+        plt.ylabel(r'$R^2_{oos}$')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'small_vs_mean_pred_year.png')
         self.plt_show()
-
 
         ### pred by month group
         YEAR = np.sort(df['date'].dt.year.unique())
@@ -293,15 +292,15 @@ class Trainer:
         for i, c in enumerate(MODEL_ALL):
             plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
+        # plt.xlabel('Year')
+        plt.ylabel(r'$R^2_{oos}$')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'small_mean_pred.png')
         self.plt_show()
 
         # We now add two figure side by side
-        paper.append_fig_to_sec(fig_names=['small_vs_mean_pred','small_vs_mean_pred_year'], sec_name='Results',
+        paper.append_fig_to_sec(fig_names=['small_vs_mean_pred', 'small_vs_mean_pred_year'], sec_name='Results',
                                 fig_captions=['vs month', 'vs year'],  # you can add individual caption to each figure (leave empty for no label)
                                 main_caption=r"The figures above show the $R^2$ of the models measured against the mean prediction of the model. Panel a): daily average , and Panel b): yearly average.")
 
@@ -329,8 +328,8 @@ class Trainer:
         for i, c in enumerate(MODEL_LIST):
             plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
-        plt.ylabel(r'Cummulative $R^2$')
+        # plt.xlabel('Year')
+        plt.ylabel(r'$R^2_{oos}$')
         plt.legend()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'cumulative_r2.png')
@@ -342,7 +341,7 @@ class Trainer:
             t = df.groupby('year').apply(lambda x: r2(x, col=c))
             plt.plot(d, t, color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
         plt.grid()
-        plt.xlabel('Year')
+        # plt.xlabel('Year')
         plt.ylabel(r'Year per Year $R^2$')
         plt.legend()
         plt.tight_layout()
@@ -354,14 +353,13 @@ class Trainer:
                                 fig_captions=['Cumulative', 'Year per year'],  # you can add individual caption to each figure (leave empty for no label)
                                 main_caption=r"The figures above show the $R^2$ of the main models. " + ADD_TEXT)
 
-
         df_kelly['year'] = df_kelly['date'].dt.year
         tt = df_kelly.groupby('year')[MODEL_ALL].std()
         for k, c in enumerate(MODEL_ALL):
-            print(k,c)
+            print(k, c)
             plt.plot(tt.index, tt[c], color=didi.DidiPlot.COLOR[k], linestyle=didi.DidiPlot.LINE_STYLE[k], label=m_dict[c])
             plt.grid()
-        plt.xlabel('Year')
+        # plt.xlabel('Year')
         plt.ylabel(r'Pred. std')
         plt.legend()
         plt.tight_layout()
@@ -372,13 +370,12 @@ class Trainer:
 
                                 main_caption=r"The figure above show the standard deviation year per year of the predicitons. It is here to check constant predicitons. ")
 
-
         ##################
         # stock by stock
         ##################
         S = []
         for i, c in enumerate(MODEL_ALL):
-            t = df_kelly.loc[~pd.isna(df_kelly[c]),:].groupby('permno').apply(lambda x: r2(x, col=c))
+            t = df_kelly.loc[~pd.isna(df_kelly[c]), :].groupby('permno').apply(lambda x: r2(x, col=c))
             plt.hist(t, color=didi.DidiPlot.COLOR[i], alpha=0.5, label=m_dict[c], bins=50, density=True)
             t.name = c
             S.append(t)
@@ -399,7 +396,6 @@ class Trainer:
         paper.append_fig_to_sec(fig_names=['hist_stock_r2', 'box_stock_r2'], sec_name='Results',
                                 main_caption=r"The figures compare the $R^2$ firm by firm of each model with histograms (a) and boxplots (b)")
 
-
         ##################
         # correlation of perf
         ##################
@@ -410,7 +406,7 @@ class Trainer:
             ax = ax or plt.gca()
             ax.annotate(f'ρ = {r:.2f}', xy=(.1, .9), xycoords=ax.transAxes)
 
-        t=t.fillna(0.0)
+        t = t.fillna(0.0)
         t.columns = [m_dict[c] for c in t.columns]
         g = sns.pairplot(t)
         g.map_lower(corrfunc)
@@ -424,13 +420,13 @@ class Trainer:
         df['ym'] = df['date'].dt.year * 100 + df['date'].dt.month
 
         ym_r2 = []
-        df_kelly['ym'] = df_kelly['date'].dt.year*100+df_kelly['date'].dt.month
+        df_kelly['ym'] = df_kelly['date'].dt.year * 100 + df_kelly['date'].dt.month
         for v in MODEL_ALL:
-            tt = df_kelly.loc[~pd.isna(df_kelly[v]),:].groupby(['ym']).apply(lambda x: r2(x, v))
+            tt = df_kelly.loc[~pd.isna(df_kelly[v]), :].groupby(['ym']).apply(lambda x: r2(x, v))
             tt.name = m_dict[v]
             ym_r2.append(tt)
         ym_r2 = pd.DataFrame(ym_r2).T
-        ym_r2=ym_r2.fillna(0.0)
+        ym_r2 = ym_r2.fillna(0.0)
         # ym_r2.columns = [m_dict[c] for c in ym_r2.columns]
         g = sns.pairplot(ym_r2)
         g.map_lower(corrfunc)
@@ -460,7 +456,7 @@ class Trainer:
                 r = {'year': y}
                 for c in MODEL_ALL:
                     ind_na = ~pd.isna(temp[c])
-                    r[c] = r2(temp.loc[ind&ind_na, :], c)
+                    r[c] = r2(temp.loc[ind & ind_na, :], c)
                 R.append(r)
             res = pd.DataFrame(R)
             res.index = res['year']
@@ -473,8 +469,8 @@ class Trainer:
             for i, c in enumerate(MODEL_ALL):
                 plt.plot(d, res[c], color=didi.DidiPlot.COLOR[i], linestyle=didi.DidiPlot.LINE_STYLE[i], label=m_dict[c])
             plt.grid()
-            plt.xlabel('Year')
-            plt.ylabel(r'Cummulative $R^2$')
+            # plt.xlabel('Year')
+            plt.ylabel(r'$R^2_{oos}$')
             plt.ylim(y_min, y_max)
             plt.legend()
             plt.tight_layout()
@@ -513,8 +509,8 @@ class Trainer:
         ## creating protfoio old way
         def get_port_old_version(pred='pred', Q=5):
             df = full_df.copy()
-            df = df.loc[~pd.isna(df[pred]),:]
-            df = df.loc[~pd.isna(df['ret1m']),:]
+            df = df.loc[~pd.isna(df[pred]), :]
+            df = df.loc[~pd.isna(df['ret1m']), :]
             df['port'] = df.groupby('date')[pred].apply(lambda x: pd.qcut(x, Q, labels=False, duplicates='drop'))
             df = df.groupby(['port', 'date'])[name_ret].mean().reset_index()
             m = df.groupby('port').mean()
@@ -531,8 +527,8 @@ class Trainer:
                 r = 1 + t[name_ret]
                 plt.plot(r.index, r.cumprod(), label=f'Port {int(port)}', color=didi.DidiPlot.COLOR[port])
             plt.legend()
-            plt.xlabel('Date')
-            plt.ylabel('Cum. Ret.')
+            # plt.xlabel('Date')
+            plt.ylabel('Return')
             plt.grid()
             plt.tight_layout()
             plt.savefig(paper.dir_figs + f'cum_ret_{pred}.png')
@@ -554,9 +550,11 @@ class Trainer:
         for tp in MODEL_LIST:
             k += 1
             plt.plot(M.index, M[tp], label=f'{tp}', color=didi.DidiPlot.COLOR[k])
+            plt.scatter(M.index, M[tp], color=didi.DidiPlot.COLOR[k])
         plt.legend()
-        plt.xlabel('Portfolio index')
-        plt.ylabel('Port mean return')
+        plt.xlabel('Portfolio quintile')
+        plt.ylabel('Portfolio mean return')
+        plt.xticks(M.index)
         plt.grid()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'comparing_mean.png')
@@ -572,8 +570,8 @@ class Trainer:
 
         def get_port_weights(pred='pred', LEVERAGE=1):
             df = full_df.copy()
-            df = df.loc[~pd.isna(df[pred]),:]
-            df = df.loc[~pd.isna(df['ret1m']),:]
+            df = df.loc[~pd.isna(df[pred]), :]
+            df = df.loc[~pd.isna(df['ret1m']), :]
             df['w'] = (1 + df[pred]) ** LEVERAGE
 
             df['ew'] = 1
@@ -622,17 +620,17 @@ class Trainer:
         for tp in MODEL_LIST:
             k += 1
             df = wp[tp]
-            min_ = max(min_,df['std'].min())
-            max_ = min(max_,df['std'].max())
-            min_y = max(min_y,df['mean'].min())
-            max_y = min(max_y,df['mean'].max())
+            min_ = max(min_, df['std'].min())
+            max_ = min(max_, df['std'].max())
+            min_y = max(min_y, df['mean'].min())
+            max_y = min(max_y, df['mean'].max())
             plt.plot(df['std'], df['mean'], label=m_dict[tp], color=didi.DidiPlot.COLOR[k])
 
         plt.legend()
-        plt.xlabel('Portfolio std')
-        plt.ylabel('Portfolio mean')
-        plt.xlim(min_,max_)
-        plt.ylim(min_y-0.005,max_y+0.005)
+        plt.xlabel('annualized standard deviation')
+        plt.ylabel('annualized mean return')
+        plt.xlim(min_, max_)
+        plt.ylim(min_y - 0.005, max_y + 0.005)
         plt.grid()
         plt.tight_layout()
         plt.savefig(paper.dir_figs + 'mean_vs_factor.png')
@@ -666,6 +664,38 @@ class Trainer:
             for l in tqdm(L, 'load shapeley df'):
                 shap = shap.append(pd.read_pickle(self.model.res_dir + l))
 
+            ## renaming the columns to please the master
+
+            def tr_func(x):
+                t = ''
+                if x == 'mean_pred':
+                    t = 'mean'
+                elif x == 'median_pred':
+                    t = 'median'
+                else:
+                    nb_days = x.split('_')[-1]
+                    predictor = x.split('err_')[1].split('_')[0]
+                    agg_id = x.split('err_' + predictor + '_')[-1].split('_')[0]
+                    if 'mean' in agg_id:
+                        agg = 'average absolute error'
+                    if 'std' in agg_id:
+                        agg = 'variance absolute error'
+                    if 'Quantile' in agg_id:
+                        if '0.75' in agg_id:
+                            agg = 'upper quartile absolute error'
+                        if '0.25' in agg_id:
+                            agg = 'lower quartile absolute error'
+                    t = f'{predictor} predictor | {nb_days} days {agg}'
+                return t
+
+            tr = []
+            for x in shap.columns:
+                if x in shap.columns[5:]:
+                    tr.append(tr_func(x))
+                else:
+                    tr.append(x)
+            shap.columns = tr
+
             ## keep only the day on the vilk sample
             t = full_df.dropna()[['permno', 'date', 'pred', 'ret1m']]
             shap = shap.merge(t[['permno', 'date']])
@@ -674,6 +704,8 @@ class Trainer:
             for c in shap.columns[5:]:
                 S[c] = (f / r2(shap, c)) - 1
                 # S[c] = (r2(shap,c)-f)
+
+            plt.figure(figsize=[6.4 * 2, 4.8 * 1.5])
             S = pd.Series(S).sort_values(ascending=True)
             plt.barh(S.index, S.values)
             plt.tight_layout()
@@ -686,6 +718,7 @@ class Trainer:
                 sk = sk.head(20)
             sk = sk.sort_values(ascending=True)
 
+            plt.figure(figsize=[6.4 * 2, 4.8 * 1.5])
             plt.barh(sk.index, sk.values)
             plt.tight_layout()
             plt.savefig(paper.dir_figs + 'shap_kelly.png')
@@ -709,12 +742,14 @@ class Trainer:
                     # S[c] = (r2(shap,c)-f)
                 S = pd.Series(S).sort_values(ascending=True)
                 print(y, S.head())
+                plt.figure(figsize=[6.4 * 2, 4.8 * 1.5])
                 plt.barh(S.index, S.values)
                 plt.tight_layout()
                 plt.savefig(paper.dir_figs + f'shap_clean_{y}.png')
                 self.plt_show()
                 S.name = y
                 S_year.append(S)
+            plt.figure(figsize=[6.4 * 2, 4.8 * 1.5])
             t = pd.concat(S_year, 1)
             S = t.max(1).sort_values(ascending=True)
             plt.barh(S.index, S.values)
@@ -725,20 +760,60 @@ class Trainer:
             paper.append_fig_to_sec(fig_names=[f'shap_min'], sec_name='Results',
                                     main_caption=rf"The figures above show the minimum shapely value caluclated year by year. It shows the maximum positive impact a feature had on a given year.")
 
-            N = []
-            L = []
-            for c in t.index:
-                t.loc[c,:].plot(color='k')
+            def get_big_fig(basis):
+                to_plot = [x for x in t.index if basis in x]
+                min_ = t.loc[to_plot + [basis.split(' ')[0]],:].min().min()*0.95
+                max_ = t.loc[to_plot + [basis.split(' ')[0]],:].max().max()*1.05
+
+                nb_plot = len(to_plot) + 1
+
+                plt.figure(figsize=[6.4 * 3, 4.8 * 4])
+                k = 0
+                CC = ['average absolute error', 'lower quartile absolute error', 'upper quartile absolute error', 'variance absolute error']
+                for cc in CC:
+                    kk = -1
+                    for d in [20, 180, 252]:
+                        c = basis + f' {d} days {cc}'
+                        k += 1
+                        kk += 1
+                        plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
+                        t.loc[c, :].plot(color='k')
+                        plt.ylim(min_,max_)
+                        plt.grid()
+                        plt.tight_layout()
+                        if k <= 3:
+                            # plt.title(f'{d} days', fontweight='bold')
+                            plt.title(f'{d} days')
+                        if (k - 1) % (len(CC) - 1) == 0:
+                            plt.ylabel(cc.lower())
+
+                k += 1
+                plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
+                t.loc[basis.split(' ')[0], :].plot(color='k')
+                # plt.title(basis.split(' ')[0], fontweight='bold')
+                plt.title(basis.split(' ')[0])
+                plt.ylabel('forecast')
+                plt.grid()
+                plt.ylim(min_, max_)
                 plt.tight_layout()
-                plt.title(c)
-                plt.savefig(paper.dir_figs + f'shape_ts_{c}.png')
-                self.plt_show()
-                N.append(f'shape_ts_{c}')
-                L.append(c.replace('_',' '))
 
-            paper.append_fig_to_sec(fig_names=N,fig_captions=L, sec_name='Results', size = r"0.15\linewidth",
-                                    main_caption=rf"The figures above show the time series of shapely value year per year .")
+            basis = 'mean predictor |'
 
+            get_big_fig('mean predictor |')
+            plt.savefig(paper.dir_figs + f'big_mean.png')
+            self.plt_show()
+
+            get_big_fig('median predictor |')
+            plt.savefig(paper.dir_figs + f'big_median.png')
+            self.plt_show()
+
+
+            paper.append_fig_to_sec(fig_names='big_mean', sec_name='Results',
+                                    main_caption=rf"The figures above show the time series of shapely value year per year with mean predictor.")
+
+
+            paper.append_fig_to_sec(fig_names='big_median', sec_name='Results',
+                                    main_caption=rf"The figures above show the time series of shapely value year per year with median predictor.")
 
     def plt_show(self):
         plt.close()

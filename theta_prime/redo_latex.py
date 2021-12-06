@@ -19,10 +19,19 @@ from tqdm import tqdm
 import seaborn as sns
 from scipy.stats import pearsonr
 import shutil
+import matplotlib
+import pylab
+
 
 if 'nv-' in socket.gethostname():
-    import matplotlib
     matplotlib.use('Agg')
+
+params = {'axes.labelsize': 14,
+          'axes.labelweight': 'normal',
+          'xtick.labelsize': 12,
+          'ytick.labelsize': 12,
+          'axes.titlesize': 12}
+pylab.rcParams.update(params)
 
 par = Params()
 par.name_detail='PostVac'

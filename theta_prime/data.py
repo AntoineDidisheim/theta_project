@@ -462,11 +462,11 @@ class Data:
         print(f'Set training year {year}', flush=True)
 
 
-par = Params()
-par.model.model_type = ModelType.LSTM
-self = Data(par)
-self.load_lstm_feature(reload=True)
+# par = Params()
+# par.model.model_type = ModelType.LSTM
+# self = Data(par)
 # self.load_all_price(True)
+# self.load_lstm_feature(reload=True)
 # self.load_pred_feature(True)
 # self.load_vilknoy(True)
 # self.load_mw(True)
