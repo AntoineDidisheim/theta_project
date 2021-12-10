@@ -94,13 +94,16 @@ class NetworkMean:
                 if self.par.model.batch_normalization:
                     L.append(tf.keras.layers.BatchNormalization())
 
-
-        if self.par.model.output_pos_only:
-            def final_act(x):
-                return tf.nn.tanh(x)*self.par.model.output_range
+        if self.par.model.output_range >0:
+            if self.par.model.output_pos_only:
+                def final_act(x):
+                    return tf.nn.tanh(x)*self.par.model.output_range
+            else:
+                def final_act(x):
+                    return tf.nn.sigmoid(x)*self.par.model.output_range
         else:
             def final_act(x):
-                return tf.nn.sigmoid(x)*self.par.model.output_range
+                return x
 
         # def final_act(x):
         #     return x
@@ -145,7 +148,7 @@ class NetworkMean:
             shapeley.to_pickle(self.res_dir+f'shap_{year}.p')
 
     def _train_year(self, year):
-
+        self.par.save(self.save_dir)
         X = self.data.train_x_df
         y = self.data.train_label_df[[self.name_ret]].values
         save_this_one = self.save_dir + f'{year}/'

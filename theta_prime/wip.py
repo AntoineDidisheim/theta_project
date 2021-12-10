@@ -9,6 +9,7 @@ import time
 from pandarallel import pandarallel
 import math
 import numpy as np
+from statsmodels import api as sm
 from parameters import  *
 from data import Data
 from matplotlib import pyplot as plt
@@ -52,3 +53,38 @@ par.name =  name
 
 data = Data(par)
 data.load_internally()
+
+
+def tr_func(x):
+    t = ''
+    if x == 'mean_pred':
+        t = 'mean'
+    elif x == 'median_pred':
+        t = 'median'
+    else:
+        nb_days = x.split('_')[-1]
+        predictor = x.split('err_')[1].split('_')[0]
+        agg_id = x.split('err_' + predictor + '_')[-1].split('_')[0]
+        if 'mean' in agg_id:
+            agg = 'average absolute error'
+        if 'std' in agg_id:
+            agg = 'variance absolute error'
+        if 'Quantile' in agg_id:
+            if '0.75' in agg_id:
+                agg = 'upper quartile absolute error'
+            if '0.25' in agg_id:
+                agg = 'lower quartile absolute error'
+        t = f'{predictor} predictor | {nb_days} days {agg}'
+    return t
+
+m_col=['mean_pred'] + [x for x in data.x_df.columns if 'err_mean' in x]
+corr = data.x_df[m_col].corr()
+corr.index = [tr_func(x) for x in corr.index]
+corr.columns = [tr_func(x) for x in corr.columns]
+
+temp = data.x_df[['mean_pred']]
+temp['constant'] = 1.0
+temp['y'] = data.label_df['ret1m']
+temp = temp.dropna()
+m=sm.OLS(temp['y'],temp[['constant','mean_pred']]).fit()
+m.summary2()
