@@ -147,8 +147,8 @@ class Trainer:
         KELLY_MODEL_LIST = ['pred', 'NN4EW']
         k = self.model.data.load_kelly_bench()
         df = true_full.merge(k)
-        temp = self.model.data.load_additional_crsp(reload=True)
-        df_strat = df.merge(temp).to_pickle('res/res_kelly_2.p')
+        temp = self.model.data.load_additional_crsp()
+        df_strat = df.merge(temp)
 
         # temp = self.model.data.load_additional_crsp(reload=True)
         # df.merge(temp).to_pickle('res/res_kelly_2.p')
