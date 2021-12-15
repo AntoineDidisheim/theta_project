@@ -29,7 +29,7 @@ par = Params()
 par.name_detail='LargerRange_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
-par.model.dropout = 0.2
+par.model.dropout = 0.0
 par.model.output_range=-1
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
@@ -38,10 +38,11 @@ par.model.batch_normalization = False
 par.model.regulator = False
 par.update_model_name()
 
+
 data = Data(par)
 
 trainer = Trainer(par)
 self = trainer
-trainer.launch_training_expanding_window()
+# trainer.launch_training_expanding_window()
 trainer.create_paper()
 
