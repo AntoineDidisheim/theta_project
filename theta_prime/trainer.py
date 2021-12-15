@@ -16,6 +16,7 @@ from scipy.stats import pearsonr
 import shutil
 import tensorflow as tf
 import matplotlib
+from strategy import Strategy
 
 par = Params()
 
@@ -98,6 +99,7 @@ class Trainer:
         for l in tqdm(L, 'load original df'):
             full_df = full_df.append(pd.read_pickle(self.model.res_dir + l))
 
+
         ## add martin wagner
         mw = self.model.data.load_mw()
         full_df = full_df.merge(mw, how='left')
@@ -137,16 +139,20 @@ class Trainer:
         else:
             ADD_TEXT = r' $R^2$ is defined with in sample mean as a denominator benchmark. '
 
+
+
         ##################
         # r2 comparing to kelly (FULL CROSS SECTION)
         ##################
         KELLY_MODEL_LIST = ['pred', 'NN4EW']
         k = self.model.data.load_kelly_bench()
         df = true_full.merge(k)
+        temp = self.model.data.load_additional_crsp(reload=True)
+        df_strat = df.merge(temp).to_pickle('res/res_kelly_2.p')
 
         # temp = self.model.data.load_additional_crsp(reload=True)
-        # df.merge(temp).to_pickle('res/res_kelly.p')
-        # true_full.merge(temp).to_pickle('res/res_vilk.p')
+        # df.merge(temp).to_pickle('res/res_kelly_2.p')
+        # true_full.merge(temp).to_pickle('res/res_vilk_2.p')
 
         YEAR = np.sort(df['date'].dt.year.unique())
         R = []
@@ -501,6 +507,24 @@ class Trainer:
                                     main_caption=rf"The figures compare the cumulative $R^2$ of the models splitting by {col}. "
                                                  rf"Panel (a) shows the lowest third {col}, while panel (b) shows the highest {col}. "
                                                  rf"Total {s}")
+
+        ##################
+        # creating sr table for us and kelly
+        ##################
+        weight_by = 'mkt_cap'
+        strategy = Strategy(par)
+        kelly = strategy.portfolio_quantile_sort(df_strat, Q=10, ret_col='ret1m', signal='NN4EW', w_col=weight_by)
+        kelly_pred = strategy.portfolio_quantile_sort(df_strat, Q=10, ret_col='NN4EW', signal='NN4EW', w_col=weight_by)
+        us = strategy.portfolio_quantile_sort(df_strat, Q=10, ret_col='ret1m', signal='pred', w_col=weight_by)
+        us_pred = strategy.portfolio_quantile_sort(df_strat, Q=10, ret_col='pred', signal='pred', w_col=weight_by)
+
+        us_table = strategy.table_quantile_mean_std_sharp_pred(us, us_pred, annualize=12)
+        kelly_table = strategy.table_quantile_mean_std_sharp_pred(kelly, kelly_pred, annualize=12)
+        us_table.to_latex(paper.dir_tables+'sharp_t_us.tex', multicolumn=True)
+        kelly_table.to_latex(paper.dir_tables+'sharp_t_k.tex', multicolumn=True)
+
+        paper.append_table_to_sec('sharp_t_us',sec_name='Results',caption='The table below shows the portfolio built on our prediction weighted by market-cap.')
+        paper.append_table_to_sec('sharp_t_k',sec_name='Results',caption='The table below shows the portfolio built on the Kelly prediction weighted by market-cap.')
 
         ##################
         # PORTFOLIOS

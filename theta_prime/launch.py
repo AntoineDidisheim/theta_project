@@ -36,7 +36,7 @@ par.model.loss = Loss.MSE
 par.data.H = 20
 par.model.batch_normalization = False
 par.model.regulator = False
-
+par.update_model_name()
 
 data = Data(par)
 

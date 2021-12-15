@@ -46,7 +46,8 @@ par.model.loss = Loss.MSE
 par.model.E = 10
 par.data.H = 20
 
-name = 'PostVacL100_100_100_Lr0001Dropout02BS512ActreluOutRange05pLossMSECssampleFULL'
+# name = 'PostVacL100_100_100_Lr0001Dropout02BS512ActreluOutRange05pLossMSECssampleFULL' # <--- current best!
+name  = 'LargerRange_L64_32_16_Lr0001Dropout02BS512ActreluOutRange-1pLossMSECssampleFULL'
 par.name =  name
 
 
