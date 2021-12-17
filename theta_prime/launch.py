@@ -30,13 +30,13 @@ par.name_detail='LargerRange_'
 par.name_detail='RegL1_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
-par.model.dropout = 0.0
+par.model.dropout = 0.2
 par.model.output_range=-1
 par.model.learning_rate = 0.001
-par.model.loss = Loss.MSE
+par.model.loss = Loss.MAE
 par.data.H = 20
 par.model.batch_normalization = False
-par.model.regulator = 0.01
+par.model.regulator = False
 par.update_model_name()
 
 
