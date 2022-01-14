@@ -357,7 +357,8 @@ class Data:
                 TT = [20, 180, 252]
                 Q = [0.25,0.75]
                 pred_col = []
-                pred_col.append('pred')
+                if v != 'true_ret':
+                    pred_col.append('pred')
                 for T in TT:
                     print(T)
                     df.index = df['date']
