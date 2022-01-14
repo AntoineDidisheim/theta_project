@@ -99,6 +99,7 @@ class DataParams:
         self.var_subset = None
         self.cs_sample = CSSAMPLE.FULL
         self.H = 20
+        self.include_mom = True
 
 
 
@@ -145,6 +146,9 @@ class Params:
             n+='BatchN'
         if self.model.regulator:
             n+='l1'
+
+        if self.data.include_mom:
+            n+="WithMom"
 
         n+='Cssample'+str(self.data.cs_sample.name)
 

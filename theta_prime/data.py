@@ -326,7 +326,7 @@ class Data:
 
         if reload:
             print('####################', 'start pred feature pr-processing')
-            for v in ['mean', 'median']:
+            for v in ['mean', 'median','true_ret']:
                 print('###############',v)
                 if target_days == 20:
                     name_ret = 'ret1m'
@@ -340,19 +340,22 @@ class Data:
                 df = df.sort_values(['date', 'permno']).reset_index(drop=True)
                 ## mean ret over last 3 month
                 df.index = df['date']
-                t = df.groupby('permno')[f'{name_ret}_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
-                print(t)
-                df = df.reset_index(drop=True)
-                df = df.merge(t, how='left')
+                if v == 'true_ret':
+                    df[f'err_{v}'] = df['ret1']
+                else:
+                    t = df.groupby('permno')[f'{name_ret}_old'].rolling(252).aggregate([v]).reset_index().rename(columns={v: 'pred'})
+                    print(t)
+                    df = df.reset_index(drop=True)
+                    df = df.merge(t, how='left')
 
-                ind = (~pd.isna(df[name_ret])) & (~pd.isna(df['pred']))
-                df = df.loc[ind, :]
-                df = df.reset_index(drop=True)
+                    ind = (~pd.isna(df[name_ret])) & (~pd.isna(df['pred']))
+                    df = df.loc[ind, :]
+                    df = df.reset_index(drop=True)
+                    df[f'err_{v}'] = (df['pred'] - df[f'{name_ret}_old']) ** 2
 
                 TT = [20, 180, 252]
                 Q = [0.25,0.75]
                 pred_col = []
-                df[f'err_{v}'] = (df['pred'] - df[f'{name_ret}_old']) ** 2
                 pred_col.append('pred')
                 for T in TT:
                     print(T)
@@ -384,17 +387,15 @@ class Data:
                 df.to_pickle(self.par.data.dir + f'raw_merge/price_feature_{v}_H{target_days}.p')
             print('####### start merge')
             del df
-            v_1 = 'mean'
-            v_2 = 'median'
-            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
-            # df.to_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
 
-        else:
-            # df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+        # df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
+        v_1 = 'mean'
+        v_2 = 'median'
+        v_3 = 'true_ret'
+        df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
+        if self.par.data.include_mom:
             print('start merge')
-            v_1 = 'mean'
-            v_2 = 'median'
-            df=pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
+            df = df.merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_3}_H{target_days}.p'))
         return df
 
     def load_additional_crsp(self,reload=False):
@@ -462,12 +463,12 @@ class Data:
         print(f'Set training year {year}', flush=True)
 
 
-# par = Params()
-# par.model.model_type = ModelType.LSTM
-# self = Data(par)
+par = Params()
+par.model.model_type = ModelType.LSTM
+self = Data(par)
 # self.load_all_price(True)
 # self.load_lstm_feature(reload=True)
-# self.load_pred_feature(True)
+self.load_pred_feature(True)
 # self.load_vilknoy(True)
 # self.load_mw(True)
 # self.load_additional_crsp(True)
