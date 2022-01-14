@@ -326,8 +326,8 @@ class Data:
 
         if reload:
             print('####################', 'start pred feature pr-processing')
-            # for v in ['mean', 'median','true_ret']:
-            for v in ['true_ret']:
+            for v in ['mean', 'median','true_ret']:
+            # for v in ['true_ret']:
                 print('###############',v)
                 if target_days == 20:
                     name_ret = 'ret1m'
@@ -465,12 +465,12 @@ class Data:
         print(f'Set training year {year}', flush=True)
 
 
-par = Params()
-par.model.model_type = ModelType.LSTM
-self = Data(par)
+# par = Params()
+# par.model.model_type = ModelType.LSTM
+# self = Data(par)
 # self.load_all_price(True)
 # self.load_lstm_feature(reload=True)
-self.load_pred_feature(True)
+# self.load_pred_feature(True)
 # self.load_vilknoy(True)
 # self.load_mw(True)
 # self.load_additional_crsp(True)

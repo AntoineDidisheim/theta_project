@@ -26,11 +26,10 @@ if 'nv-' in socket.gethostname():
     matplotlib.use('Agg')
 
 par = Params()
-par.name_detail='LargerRange_'
-par.name_detail='2022_'
+par.name_detail='WithRET_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
-par.model.dropout = 0.4
+par.model.dropout = 0.2
 par.model.output_range=0.2
 par.model.learning_rate = 0.001
 par.model.loss = Loss.MSE
