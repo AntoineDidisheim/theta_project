@@ -702,8 +702,12 @@ class Trainer:
                     agg_id = x.split('err_' + predictor + '_')[-1].split('_')[0]
                     if 'mean' in agg_id:
                         agg = 'average absolute error'
-                    if 'std' in agg_id:
+                    elif 'std' in agg_id:
                         agg = 'variance absolute error'
+                    else:
+                        agg = 'return'
+
+
                     if 'Quantile' in agg_id:
                         if '0.75' in agg_id:
                             agg = 'upper quartile absolute error'
