@@ -425,25 +425,25 @@ class Trainer:
 
         df['ym'] = df['date'].dt.year * 100 + df['date'].dt.month
 
-        ym_r2 = []
-        df_kelly['ym'] = df_kelly['date'].dt.year * 100 + df_kelly['date'].dt.month
-        for v in MODEL_ALL:
-            tt = df_kelly.loc[~pd.isna(df_kelly[v]), :].groupby(['ym']).apply(lambda x: r2(x, v))
-            tt.name = m_dict[v]
-            ym_r2.append(tt)
-        ym_r2 = pd.DataFrame(ym_r2).T
-        ym_r2 = ym_r2.fillna(0.0)
-        # ym_r2.columns = [m_dict[c] for c in ym_r2.columns]
-        g = sns.pairplot(ym_r2)
-        g.map_lower(corrfunc)
-
-        plt.tight_layout()
-        plt.savefig(paper.dir_figs + 'corr_month.png')
-
-        self.plt_show()
-
-        paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results', size="80mm",
-                                main_caption=r"The figures illustrate the correlation between each models month by month $R^2$")
+        # ym_r2 = []
+        # df_kelly['ym'] = df_kelly['date'].dt.year * 100 + df_kelly['date'].dt.month
+        # for v in MODEL_ALL:
+        #     tt = df_kelly.loc[~pd.isna(df_kelly[v]), :].groupby(['ym']).apply(lambda x: r2(x, v))
+        #     tt.name = m_dict[v]
+        #     ym_r2.append(tt)
+        # ym_r2 = pd.DataFrame(ym_r2).T
+        # ym_r2 = ym_r2.fillna(0.0)
+        # # ym_r2.columns = [m_dict[c] for c in ym_r2.columns]
+        # g = sns.pairplot(ym_r2)
+        # g.map_lower(corrfunc)
+        #
+        # plt.tight_layout()
+        # plt.savefig(paper.dir_figs + 'corr_month.png')
+        #
+        # self.plt_show()
+        #
+        # paper.append_fig_to_sec(fig_names=['corr_month'], sec_name='Results', size="80mm",
+        #                         main_caption=r"The figures illustrate the correlation between each models month by month $R^2$")
 
         # ### add the new section with the
         # paper.append_text_to_sec('Results',r'\n \n \clearpage \n \n')

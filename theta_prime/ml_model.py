@@ -24,7 +24,12 @@ class NetworkMean:
         self.create_network()
 
         self.save_dir = 'model_save/' + self.par.name + '/'
-        self.res_dir = 'res/' + self.par.name + '/'
+
+        if socket.gethostname() == 'work':
+            self.res_dir = '/media/antoinedidisheim/ssd_ntfs/theta_project/res/' + self.par.name + '/'
+        else:
+            self.res_dir = 'res/' + self.par.name + '/'
+
         os.makedirs(self.save_dir,exist_ok=True)
         os.makedirs(self.res_dir,exist_ok=True)
 
