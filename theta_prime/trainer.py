@@ -715,6 +715,8 @@ class Trainer:
                 return t
 
             tr = []
+            print(shap.columns)
+            breakpoint()
             for x in shap.columns:
                 if x in shap.columns[5:]:
                     tr.append(tr_func(x))
