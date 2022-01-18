@@ -730,6 +730,7 @@ class Trainer:
             S = {}
             breakpoint()
             for c in shap.columns[5:]:
+                print(c)
                 S[c] = (f / r2(shap, c)) - 1
                 # S[c] = (r2(shap,c)-f)
 
