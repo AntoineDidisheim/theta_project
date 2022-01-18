@@ -798,8 +798,9 @@ class Trainer:
 
             def get_big_fig(basis):
                 to_plot = [x for x in t.index if basis in x]
-                min_ = t.loc[to_plot + [basis.split(' ')[0]],:].min().min()*0.95
-                max_ = t.loc[to_plot + [basis.split(' ')[0]],:].max().max()*1.05
+                if 'return' not in basis:
+                    min_ = t.loc[to_plot + [basis.split(' ')[0]],:].min().min()*0.95
+                    max_ = t.loc[to_plot + [basis.split(' ')[0]],:].max().max()*1.05
 
                 nb_plot = len(to_plot) + 1
 
@@ -849,7 +850,7 @@ class Trainer:
                 self.plt_show()
 
 
-
+            breakpoint()
             paper.append_fig_to_sec(fig_names='big_mean', sec_name='Results',
                                     main_caption=rf"The figures above show the time series of shapely value year per year with mean predictor.")
 
