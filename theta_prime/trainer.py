@@ -843,6 +843,12 @@ class Trainer:
             plt.savefig(paper.dir_figs + f'big_median.png')
             self.plt_show()
 
+            if self.par.data.include_mom:
+                get_big_fig('return predictor |')
+                plt.savefig(paper.dir_figs + f'big_return.png')
+                self.plt_show()
+
+
 
             paper.append_fig_to_sec(fig_names='big_mean', sec_name='Results',
                                     main_caption=rf"The figures above show the time series of shapely value year per year with mean predictor.")
@@ -850,6 +856,12 @@ class Trainer:
 
             paper.append_fig_to_sec(fig_names='big_median', sec_name='Results',
                                     main_caption=rf"The figures above show the time series of shapely value year per year with median predictor.")
+
+
+            if self.par.data.include_mom:
+                paper.append_fig_to_sec(fig_names='big_ret', sec_name='Results',
+                                        main_caption=rf"The figures above show the time series of shapely value year per year with return predictor.")
+
 
     def plt_show(self):
         plt.close()
