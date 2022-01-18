@@ -729,10 +729,12 @@ class Trainer:
             f = r2(t, 'pred')
             S = {}
 
+
+            c = 'true predictor | 20 days return'
+            breakpoint()
             for c in shap.columns[5:]:
                 print(c)
                 S[c] = (f / r2(shap, c)) - 1
-            breakpoint()
                 # S[c] = (r2(shap,c)-f)
 
             plt.figure(figsize=[6.4 * 2, 4.8 * 1.5])
