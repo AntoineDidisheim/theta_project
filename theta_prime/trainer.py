@@ -699,7 +699,11 @@ class Trainer:
                 else:
                     nb_days = x.split('_')[-1]
                     predictor = x.split('err_')[1].split('_')[0]
+                    if predictor == 'true':
+                        predictor = 'return'
                     agg_id = x.split('err_' + predictor + '_')[-1].split('_')[0]
+                    if agg_id == 'err':
+                        agg_id = x.split('err_true_ret_')[-1].split('_')[0]
                     if 'mean' in agg_id:
                         agg = 'average absolute error'
                     elif 'std' in agg_id:
@@ -714,8 +718,11 @@ class Trainer:
                     t = f'{predictor} predictor | {nb_days} days {agg}'
                 return t
 
+
+
             tr = []
             print(shap.columns)
+
             for x in shap.columns:
                 if x in shap.columns[5:]:
                     tr.append(tr_func(x))
@@ -729,9 +736,6 @@ class Trainer:
             f = r2(t, 'pred')
             S = {}
 
-
-            c = 'true predictor | 20 days return'
-            breakpoint()
             for c in shap.columns[5:]:
                 print(c)
                 S[c] = (f / r2(shap, c)) - 1
