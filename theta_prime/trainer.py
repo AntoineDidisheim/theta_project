@@ -716,7 +716,6 @@ class Trainer:
 
             tr = []
             print(shap.columns)
-            breakpoint()
             for x in shap.columns:
                 if x in shap.columns[5:]:
                     tr.append(tr_func(x))
@@ -729,6 +728,7 @@ class Trainer:
             shap = shap.merge(t[['permno', 'date']])
             f = r2(t, 'pred')
             S = {}
+            breakpoint()
             for c in shap.columns[5:]:
                 S[c] = (f / r2(shap, c)) - 1
                 # S[c] = (r2(shap,c)-f)
