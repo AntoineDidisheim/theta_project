@@ -706,8 +706,6 @@ class Trainer:
                         agg = 'variance absolute error'
                     else:
                         agg = 'return'
-
-
                     if 'Quantile' in agg_id:
                         if '0.75' in agg_id:
                             agg = 'upper quartile absolute error'
