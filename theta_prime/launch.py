@@ -38,7 +38,7 @@ par.model.loss = Loss.MSE
 par.data.H = 20
 par.model.batch_normalization = False
 par.model.regulator = False
-par.data.var_subset = []
+# par.data.var_subset = []
 
 
 par.update_model_name()
