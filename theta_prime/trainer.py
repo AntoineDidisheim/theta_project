@@ -864,6 +864,7 @@ class Trainer:
                 paper.append_fig_to_sec(fig_names='big_ret', sec_name='Results',
                                         main_caption=rf"The figures above show the time series of shapely value year per year with return predictor.")
 
+            breakpoint()
 
     def plt_show(self):
         plt.close()

@@ -27,8 +27,8 @@ if 'nv-' in socket.gethostname():
 
 par = Params()
 # par.name_detail='WithRET_'
-# par.name_detail='NoMedian_'
-par.name_detail='Subset_'
+par.name_detail='NoMedian_'
+# par.name_detail='Subset_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
 par.model.dropout = 0.2
