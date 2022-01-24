@@ -835,14 +835,15 @@ class Trainer:
                 plt.tight_layout()
 
             basis = 'mean predictor |'
+            breakpoint()
 
             get_big_fig('mean predictor |')
             plt.savefig(paper.dir_figs + f'big_mean.png')
             self.plt_show()
 
-            get_big_fig('median predictor |')
-            plt.savefig(paper.dir_figs + f'big_median.png')
-            self.plt_show()
+            # get_big_fig('median predictor |')
+            # plt.savefig(paper.dir_figs + f'big_median.png')
+            # self.plt_show()
 
             if self.par.data.include_mom:
                 get_big_fig('return predictor |')
@@ -850,7 +851,6 @@ class Trainer:
                 self.plt_show()
 
 
-            breakpoint()
             paper.append_fig_to_sec(fig_names='big_mean', sec_name='Results',
                                     main_caption=rf"The figures above show the time series of shapely value year per year with mean predictor.")
 
