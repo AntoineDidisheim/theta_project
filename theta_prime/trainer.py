@@ -829,7 +829,8 @@ class Trainer:
 
                 k += 1
                 plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
-                t.loc[basis.split(' ')[0], :].plot(color='k')
+                if 'return' not in basis:
+                    t.loc[basis.split(' ')[0], :].plot(color='k')
                 # plt.title(basis.split(' ')[0], fontweight='bold')
                 plt.title(basis.split(' ')[0])
                 plt.ylabel('forecast')
