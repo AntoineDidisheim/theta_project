@@ -801,6 +801,9 @@ class Trainer:
                 if 'return' not in basis:
                     min_ = t.loc[to_plot + [basis.split(' ')[0]],:].min().min()*0.95
                     max_ = t.loc[to_plot + [basis.split(' ')[0]],:].max().max()*1.05
+                else:
+                    min_ = t.loc[to_plot,:].min().min()*0.95
+                    max_ = t.loc[to_plot,:].max().max()*1.05
 
                 nb_plot = len(to_plot) + 1
 
@@ -834,8 +837,6 @@ class Trainer:
                 plt.ylim(min_, max_)
                 plt.tight_layout()
 
-            basis = 'mean predictor |'
-            breakpoint()
 
             get_big_fig('mean predictor |')
             plt.savefig(paper.dir_figs + f'big_mean.png')
