@@ -38,10 +38,14 @@ par.data.H = 20
 par.model.batch_normalization = False
 par.model.regulator = False
 
-# c = ['permno', 'date', 'ticker', 'ret1m', 'pred', 'mean', 'mean predictor | 20 days average absolute error', 'mean predictor | 20 days variance absolute error', 'mean predictor | 20 days lower quartile absolute error', 'mean predictor | 20 days upper quartile absolute error', 'mean predictor | 180 days average absolute error', 'mean predictor | 180 days variance absolute error', 'mean predictor | 180 days lower quartile absolute error', 'mean predictor | 180 days upper quartile absolute error', 'mean predictor | 252 days average absolute error', 'mean predictor | 252 days variance absolute error', 'mean predictor | 252 days lower quartile absolute error', 'mean predictor | 252 days upper quartile absolute error', 'return predictor | 20 days average absolute error', 'return predictor | 20 days variance absolute error', 'return predictor | 20 days lower quartile absolute error', 'return predictor | 20 days upper quartile absolute error','return predictor | 180 days average absolute error', 'return predictor | 180 days variance absolute error', 'return predictor | 180 days lower quartile absolute error', 'return predictor | 180 days upper quartile absolute error', 'return predictor | 252 days average absolute error', 'return predictor | 252 days variance absolute error', 'return predictor | 252 days lower quartile absolute error', 'return predictor | 252 days upper quartile absolute error']
+C=['mean_pred', 'err_mean_mean_20', 'err_mean_std_20', 'err_mean_Quantile0.25_20', 'err_mean_Quantile0.75_20', 'err_mean_mean_180', 'err_mean_std_180', 'err_mean_Quantile0.25_180', 'err_mean_Quantile0.75_180', 'err_mean_mean_252', 'err_mean_std_252', 'err_mean_Quantile0.25_252', 'err_mean_Quantile0.75_252', 'err_true_ret_mean_20', 'err_true_ret_std_20', 'err_true_ret_Quantile0.25_20', 'err_true_ret_Quantile0.75_20', 'err_true_ret_mean_180', 'err_true_ret_std_180', 'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180', 'err_true_ret_mean_252', 'err_true_ret_std_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
+for c in C:
+    if 'std' in c:
+        C.remove(c)
+
+par.data.var_subset = C
 
 
-# par.data.var_subset = []
 
 
 par.update_model_name()
@@ -56,5 +60,5 @@ trainer.launch_training_expanding_window()
 trainer.create_paper()
 
 
-# ['permno', 'date', 'ticker', 'ret1m', 'pred', 'mean', 'mean predictor | 20 days average absolute error', 'mean predictor | 20 days variance absolute error', 'mean predictor | 20 days lower quartile absolute error', 'mean predictor | 20 days upper quartile absolute error', 'mean predictor | 180 days average absolute error', 'mean predictor | 180 days variance absolute error', 'mean predictor | 180 days lower quartile absolute error', 'mean predictor | 180 days upper quartile absolute error', 'mean predictor | 252 days average absolute error', 'mean predictor | 252 days variance absolute error', 'mean predictor | 252 days lower quartile absolute error', 'mean predictor | 252 days upper quartile absolute error', 'return predictor | 20 days average absolute error', 'return predictor | 20 days variance absolute error', 'return predictor | 20 days lower quartile absolute error', 'return predictor | 20 days upper quartile absolute error',
-#        'return predictor | 180 days average absolute error', 'return predictor | 180 days variance absolute error', 'return predictor | 180 days lower quartile absolute error', 'return predictor | 180 days upper quartile absolute error', 'return predictor | 252 days average absolute error', 'return predictor | 252 days variance absolute error', 'return predictor | 252 days lower quartile absolute error', 'return predictor | 252 days upper quartile absolute error']
+
+# ['mean_pred', 'err_mean_mean_20', 'err_mean_std_20', 'err_mean_Quantile0.25_20', 'err_mean_Quantile0.75_20', 'err_mean_mean_180', 'err_mean_std_180', 'err_mean_Quantile0.25_180', 'err_mean_Quantile0.75_180', 'err_mean_mean_252', 'err_mean_std_252', 'err_mean_Quantile0.25_252', 'err_mean_Quantile0.75_252', 'err_true_ret_mean_20', 'err_true_ret_std_20', 'err_true_ret_Quantile0.25_20', 'err_true_ret_Quantile0.75_20', 'err_true_ret_mean_180', 'err_true_ret_std_180', 'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180', 'err_true_ret_mean_252', 'err_true_ret_std_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
