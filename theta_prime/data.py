@@ -326,7 +326,8 @@ class Data:
 
         if reload:
             print('####################', 'start pred feature pr-processing')
-            for v in ['mean', 'median','true_ret']:
+            # for v in ['mean', 'median','true_ret']:
+            for v in ['mean','true_ret']:
             # for v in ['true_ret']:
                 print('###############',v)
                 if target_days == 20:
@@ -392,12 +393,9 @@ class Data:
 
         # df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
         v_1 = 'mean'
-        v_2 = 'median'
-        v_3 = 'true_ret'
+        # v_2 = 'median'
+        v_2 = 'true_ret'
         df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
-        if self.par.data.include_mom:
-            print('start merge')
-            df = df.merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_3}_H{target_days}.p'))
         return df
 
     def load_additional_crsp(self,reload=False):
