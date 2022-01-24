@@ -688,6 +688,7 @@ class Trainer:
             for l in tqdm(L, 'load shapeley df'):
                 shap = shap.append(pd.read_pickle(self.model.res_dir + l))
 
+
             ## renaming the columns to please the master
 
             def tr_func(x):
@@ -865,7 +866,7 @@ class Trainer:
                 paper.append_fig_to_sec(fig_names='big_ret', sec_name='Results',
                                         main_caption=rf"The figures above show the time series of shapely value year per year with return predictor.")
 
-            breakpoint()
+            # breakpoint()
 
     def plt_show(self):
         plt.close()

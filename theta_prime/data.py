@@ -446,6 +446,8 @@ class Data:
             for c in self.x_df.columns:
                 self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
             # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
+        print('Data used')
+        print(self.x_df.columns)
 
 
     def set_year_test(self, year):
