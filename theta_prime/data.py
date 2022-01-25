@@ -327,7 +327,7 @@ class Data:
         if reload:
             print('####################', 'start pred feature pr-processing')
             # for v in ['mean', 'median','true_ret']:
-            for v in ['mean','true_ret']:
+            for v in ['median','true_ret']:
             # for v in ['true_ret']:
                 print('###############',v)
                 if target_days == 20:

@@ -864,7 +864,7 @@ class Trainer:
 
 
             if self.par.data.include_mom:
-                paper.append_fig_to_sec(fig_names='big_ret', sec_name='Results',
+                paper.append_fig_to_sec(fig_names='big_return', sec_name='Results',
                                         main_caption=rf"The figures above show the time series of shapely value year per year with return predictor.")
 
             # breakpoint()
