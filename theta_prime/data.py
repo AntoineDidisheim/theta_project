@@ -466,13 +466,7 @@ class Data:
 
 
 
-par = Params()
-self = Data(par)
-self.load_pred_feature(True)
-# par.model.model_type = ModelType.LSTM
-# self.load_all_price(True)
-# self.load_lstm_feature(reload=True)
+# par = Params()
+# self = Data(par)
 # self.load_pred_feature(True)
-# self.load_vilknoy(True)
-# self.load_mw(True)
-# self.load_additional_crsp(True)
+
