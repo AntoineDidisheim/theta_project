@@ -818,15 +818,16 @@ class Trainer:
                         k += 1
                         kk += 1
                         plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
-                        t.loc[c, :].plot(color='k')
-                        plt.ylim(min_,max_)
-                        plt.grid()
-                        plt.tight_layout()
-                        if k <= 3:
-                            # plt.title(f'{d} days', fontweight='bold')
-                            plt.title(f'{d} days')
-                        if (k - 1) % (len(CC) - 1) == 0:
-                            plt.ylabel(cc.lower())
+                        if (c in t.index) | (c in t.columns):
+                            t.loc[c, :].plot(color='k')
+                            plt.ylim(min_,max_)
+                            plt.grid()
+                            plt.tight_layout()
+                            if k <= 3:
+                                # plt.title(f'{d} days', fontweight='bold')
+                                plt.title(f'{d} days')
+                            if (k - 1) % (len(CC) - 1) == 0:
+                                plt.ylabel(cc.lower())
 
                 k += 1
                 plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
