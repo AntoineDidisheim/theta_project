@@ -392,8 +392,8 @@ class Data:
             del df
 
         # df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature.p')
-        v_1 = 'mean'
-        # v_2 = 'median'
+        v_1 = 'median'
+        # v_2 = 'mean'
         v_2 = 'true_ret'
         df = pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_1}_H{target_days}.p').merge(pd.read_pickle(self.par.data.dir + f'raw_merge/price_feature_{v_2}_H{target_days}.p'))
         return df
@@ -465,9 +465,11 @@ class Data:
         print(f'Set training year {year}', flush=True)
 
 
-# par = Params()
+
+par = Params()
+self = Data(par)
+self.load_pred_feature(True)
 # par.model.model_type = ModelType.LSTM
-# self = Data(par)
 # self.load_all_price(True)
 # self.load_lstm_feature(reload=True)
 # self.load_pred_feature(True)
