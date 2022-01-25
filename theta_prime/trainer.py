@@ -814,11 +814,11 @@ class Trainer:
                 for cc in CC:
                     kk = -1
                     for d in [20, 180, 252]:
-                        c = basis + f' {d} days {cc}'
-                        k += 1
-                        kk += 1
-                        plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
                         if (c in t.index) | (c in t.columns):
+                            c = basis + f' {d} days {cc}'
+                            k += 1
+                            kk += 1
+                            plt.subplot(len(CC) + 1, int(np.ceil(nb_plot) / len(CC)), k)
                             t.loc[c, :].plot(color='k')
                             plt.ylim(min_,max_)
                             plt.grid()
