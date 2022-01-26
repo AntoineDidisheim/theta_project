@@ -803,9 +803,11 @@ class Trainer:
 
             def get_big_fig(basis):
                 to_plot = [x for x in t.index if basis in x]
+                ab = 'absolute error'
                 if 'return' not in basis:
                     min_ = t.loc[to_plot + [basis.split(' ')[0]],:].min().min()*0.95
                     max_ = t.loc[to_plot + [basis.split(' ')[0]],:].max().max()*1.05
+                    ab = ''
                 else:
                     min_ = t.loc[to_plot,:].min().min()*0.95
                     max_ = t.loc[to_plot,:].max().max()*1.05
@@ -814,7 +816,10 @@ class Trainer:
 
                 plt.figure(figsize=[6.4 * 3, 4.8 * 4])
                 k = 0
-                CC = ['average absolute error', 'lower quartile absolute error', 'upper quartile absolute error', 'variance absolute error']
+                if self.par.data.inter_quartile_version:
+                    CC = [f'average {ab}', f'lower quartile {ab}', f'quartile range {ab}', f'variance {ab}']
+                else:
+                    CC = [f'average {ab}', f'lower quartile {ab}', f'upper quartile {ab}', f'variance {ab}']
                 for cc in CC:
                     kk = -1
                     for d in [20, 180, 252]:

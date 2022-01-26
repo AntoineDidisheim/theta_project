@@ -446,6 +446,19 @@ class Data:
             for c in self.x_df.columns:
                 self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / (self.x_df[c].max()-self.x_df[c].min())
             # self.x_df.loc[:, c] = (self.x_df[c] - self.x_df[c].mean()) / self.x_df[c].std()
+
+        # C=['mean_pred', 'err_mean_mean_20', 'err_mean_std_20', 'err_mean_Quantile0.25_20', 'err_mean_Quantile0.75_20', 'err_mean_mean_180', 'err_mean_std_180', 'err_mean_Quantile0.25_180', 'err_mean_Quantile0.75_180', 'err_mean_mean_252', 'err_mean_std_252', 'err_mean_Quantile0.25_252', 'err_mean_Quantile0.75_252', 'err_true_ret_mean_20', 'err_true_ret_std_20', 'err_true_ret_Quantile0.25_20', 'err_true_ret_Quantile0.75_20', 'err_true_ret_mean_180', 'err_true_ret_std_180', 'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180', 'err_true_ret_mean_252', 'err_true_ret_std_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
+        C = self.x_df.columns
+        for c in C:
+            v = 'Quantile0.75'
+            if v in c:
+                low = c.split(v)[0]+'Quantile0.25'+c.split[1]
+                new = c.split(v)[0]+'QuantileRange'+c.split([1])
+                self.x_df[new] = self.x_df[c]-self.x_df[low]
+                del self.x_df[c]
+
+
+
         print('Data used')
         print(self.x_df.columns)
 

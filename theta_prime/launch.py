@@ -26,7 +26,7 @@ if 'nv-' in socket.gethostname():
 
 par = Params()
 # par.name_detail='WithRET_'
-par.name_detail='NoMean_'
+par.name_detail='NoMean2_'
 # par.name_detail='Subset_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
@@ -37,6 +37,7 @@ par.model.loss = Loss.MSE
 par.data.H = 20
 par.model.batch_normalization = False
 par.model.regulator = False
+par.data.inter_quartile_version=True
 
 # C=['mean_pred', 'err_mean_mean_20', 'err_mean_std_20', 'err_mean_Quantile0.25_20', 'err_mean_Quantile0.75_20', 'err_mean_mean_180', 'err_mean_std_180', 'err_mean_Quantile0.25_180', 'err_mean_Quantile0.75_180', 'err_mean_mean_252', 'err_mean_std_252', 'err_mean_Quantile0.25_252', 'err_mean_Quantile0.75_252', 'err_true_ret_mean_20', 'err_true_ret_std_20', 'err_true_ret_Quantile0.25_20', 'err_true_ret_Quantile0.75_20', 'err_true_ret_mean_180', 'err_true_ret_std_180', 'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180', 'err_true_ret_mean_252', 'err_true_ret_std_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
 # C=['mean_pred', 'err_mean_mean_20', 'err_mean_std_20', 'err_mean_Quantile0.25_20', 'err_mean_Quantile0.75_20', 'err_mean_mean_180', 'err_mean_std_180', 'err_mean_Quantile0.25_180', 'err_mean_Quantile0.75_180', 'err_mean_mean_252', 'err_mean_std_252', 'err_mean_Quantile0.25_252', 'err_mean_Quantile0.75_252', 'err_true_ret_mean_20', 'err_true_ret_std_20', 'err_true_ret_Quantile0.25_20', 'err_true_ret_Quantile0.75_20', 'err_true_ret_mean_180', 'err_true_ret_std_180', 'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180', 'err_true_ret_mean_252', 'err_true_ret_std_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
@@ -57,7 +58,7 @@ data = Data(par)
 
 trainer = Trainer(par)
 self = trainer
-# trainer.launch_training_expanding_window()
+trainer.launch_training_expanding_window()
 trainer.create_paper()
 
 
