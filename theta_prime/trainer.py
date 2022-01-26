@@ -700,22 +700,26 @@ class Trainer:
                 else:
                     nb_days = x.split('_')[-1]
                     predictor = x.split('err_')[1].split('_')[0]
+                    ar = 'absolute error'
                     if predictor == 'true':
                         predictor = 'return'
+                        ar = ''
                     agg_id = x.split('err_' + predictor + '_')[-1].split('_')[0]
                     if agg_id == 'err':
                         agg_id = x.split('err_true_ret_')[-1].split('_')[0]
                     if 'mean' in agg_id:
-                        agg = 'average absolute error'
+                        agg = f'average  {ar}'
                     elif 'std' in agg_id:
-                        agg = 'variance absolute error'
+                        agg = f'variance {ar}'
                     else:
                         agg = 'return'
                     if 'Quantile' in agg_id:
                         if '0.75' in agg_id:
-                            agg = 'upper quartile absolute error'
+                            agg = f'upper quartile {ar}'
                         if '0.25' in agg_id:
-                            agg = 'lower quartile absolute error'
+                            agg = f'lower quartile {ar}'
+                        if 'Range' in agg_id:
+                            agg = f'Range {ar}'
                     t = f'{predictor} predictor | {nb_days} days {agg}'
                 return t
 

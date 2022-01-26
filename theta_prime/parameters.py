@@ -84,6 +84,7 @@ class ParamsModels:
 
 
 
+
 class DataParams:
     def __init__(self):
         if socket.gethostname() == 'work':
@@ -100,6 +101,7 @@ class DataParams:
         self.cs_sample = CSSAMPLE.FULL
         self.H = 20
         self.include_mom = True
+        self.inter_quartile_version = True
 
 
 
