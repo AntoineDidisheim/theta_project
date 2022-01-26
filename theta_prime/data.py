@@ -452,8 +452,8 @@ class Data:
         for c in C:
             v = 'Quantile0.75'
             if v in c:
-                low = c.split(v)[0]+'Quantile0.25'+c.split[1]
-                new = c.split(v)[0]+'QuantileRange'+c.split([1])
+                low = c.split(v)[0]+'Quantile0.25'+c.split(v)[1]
+                new = c.split(v)[0]+'QuantileRange'+c.split(v)[1]
                 self.x_df[new] = self.x_df[c]-self.x_df[low]
                 del self.x_df[c]
 
