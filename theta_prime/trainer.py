@@ -850,13 +850,13 @@ class Trainer:
                 plt.tight_layout()
 
 
-            get_big_fig('mean predictor |')
-            plt.savefig(paper.dir_figs + f'big_mean.png')
-            self.plt_show()
-
-            # get_big_fig('median predictor |')
-            # plt.savefig(paper.dir_figs + f'big_median.png')
+            # get_big_fig('mean predictor |')
+            # plt.savefig(paper.dir_figs + f'big_mean.png')
             # self.plt_show()
+
+            get_big_fig('median predictor |')
+            plt.savefig(paper.dir_figs + f'big_median.png')
+            self.plt_show()
 
             if self.par.data.include_mom:
                 get_big_fig('return predictor |')
