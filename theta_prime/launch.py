@@ -26,7 +26,7 @@ if 'nv-' in socket.gethostname():
 
 par = Params()
 # par.name_detail='WithRET_'
-par.name_detail='NoMean2_'
+par.name_detail='Simple1_'
 # par.name_detail='Subset_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
@@ -46,7 +46,10 @@ par.data.inter_quartile_version=True
 #         C.remove(c)
 #
 # par.data.var_subset = C
-
+par.data.var_subset = ['err_true_ret_mean_20', 'err_true_ret_Quantile0.25_20',
+                       'err_true_ret_Quantile0.75_20', 'err_true_ret_mean_180',
+                       'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180',
+                       'err_true_ret_mean_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
 
 
 
