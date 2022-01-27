@@ -480,7 +480,7 @@ class Data:
 
 
 
-par = Params()
-self = Data(par)
-self.load_pred_feature(True)
+# par = Params()
+# self = Data(par)
+# self.load_pred_feature(True)
 
