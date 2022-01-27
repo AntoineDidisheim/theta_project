@@ -363,13 +363,15 @@ class Data:
                 for T in TT:
                     print(T)
                     df.index = df['date']
-                    t = df.groupby('permno')[f'err_{v}'].rolling(T).agg(['mean', 'std']).reset_index()
+                    t = df.groupby('permno')[f'err_{v}'].rolling(T).agg(['mean', 'std','median']).reset_index()
                     t[f'err_{v}_mean_{T}'] = t.groupby('permno')['mean'].shift(1)
+                    t[f'err_{v}_median_{T}'] = t.groupby('permno')['median'].shift(1)
                     t[f'err_{v}_std_{T}'] = t.groupby('permno')['std'].shift(1)
                     pred_col.append(f'err_{v}_mean_{T}')
+                    pred_col.append(f'err_{v}_median_{T}')
                     pred_col.append(f'err_{v}_std_{T}')
                     t = t.dropna()
-                    del t['mean'], t['std']
+                    del t['mean'], t['std'],t['median']
                     df = df.reset_index(drop=True)
                     df = df.merge(t, how='left')
 
@@ -478,7 +480,7 @@ class Data:
 
 
 
-# par = Params()
-# self = Data(par)
-# self.load_pred_feature(True)
+par = Params()
+self = Data(par)
+self.load_pred_feature(True)
 

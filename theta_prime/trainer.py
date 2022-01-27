@@ -849,19 +849,26 @@ class Trainer:
                 plt.ylim(min_, max_)
                 plt.tight_layout()
 
+            try:
+                get_big_fig('mean predictor |')
+                plt.savefig(paper.dir_figs + f'big_mean.png')
+                self.plt_show()
+            except:
+                print('skip mean bigp plot')
 
-            # get_big_fig('mean predictor |')
-            # plt.savefig(paper.dir_figs + f'big_mean.png')
-            # self.plt_show()
+            try:
+                get_big_fig('median predictor |')
+                plt.savefig(paper.dir_figs + f'big_median.png')
+                self.plt_show()
+            except:
+                print('skip median')
 
-            get_big_fig('median predictor |')
-            plt.savefig(paper.dir_figs + f'big_median.png')
-            self.plt_show()
-
-            if self.par.data.include_mom:
+            try:
                 get_big_fig('return predictor |')
                 plt.savefig(paper.dir_figs + f'big_return.png')
                 self.plt_show()
+            except:
+                print('skip return')
 
 
             paper.append_fig_to_sec(fig_names='big_mean', sec_name='Results',
