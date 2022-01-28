@@ -26,7 +26,7 @@ if 'nv-' in socket.gethostname():
 
 par = Params()
 # par.name_detail='WithRET_'
-par.name_detail='Simple1_'
+par.name_detail='Simple2_'
 # par.name_detail='Subset_'
 par.data.cs_sample = CSSAMPLE.FULL
 par.model.layers = [64,32,16]
@@ -51,7 +51,8 @@ par.data.var_subset = ['err_true_ret_median_20', 'err_true_ret_Quantile0.25_20',
                        'err_true_ret_Quantile0.25_180', 'err_true_ret_Quantile0.75_180',
                        'err_true_ret_median_252', 'err_true_ret_Quantile0.25_252', 'err_true_ret_Quantile0.75_252']
 
-
+t = [x.replace('err_true_ret','err_median') for x in par.data.var_subset]
+par.data.var_subset = par.data.var_subset + t
 
 par.update_model_name()
 
@@ -61,7 +62,7 @@ data = Data(par)
 
 trainer = Trainer(par)
 self = trainer
-# trainer.launch_training_expanding_window()
+trainer.launch_training_expanding_window()
 trainer.create_paper()
 
 
