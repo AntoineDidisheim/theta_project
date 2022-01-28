@@ -709,6 +709,8 @@ class Trainer:
                         agg_id = x.split('err_true_ret_')[-1].split('_')[0]
                     if 'mean' in agg_id:
                         agg = f'average  {ar}'
+                    elif 'median' in agg_id:
+                        agg = f'median  {ar}'
                     elif 'std' in agg_id:
                         agg = f'variance {ar}'
                     else:
